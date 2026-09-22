@@ -10,6 +10,6 @@
 
 - **HFTV1_NCBI_PP_consensus.gff** - HFTV1 annotation containing features derived from NCBI annotations and Pharokka/Phold (PP), as well as revised descriptions for structural genes based on Zhang et al. (2025) cryo-EM of HFTV1 virions.
 
-- **HFTV1_Hg.gff** and **HFTV1_Hg_gff.csv** - Merged HFTV1-*Hg* annotations, with revisions of HFTV1 ORFs based on translation start site mapping using Ribo-seq +/- harringtonine. HFTV1 annotation with Pharokka/Phold features (see above) was used as input in the construction of this file.
+- **HFTV1_Hg.gff** and **HFTV1_Hg_gff.csv** - Merged HFTV1-*Hg* annotations, with revisions of HFTV1 ORFs based on translation start site mapping using Ribo-seq +/- harringtonine. HFTV1 annotation with Pharokka/Phold features (see above) was used as input in the construction of this file. CSV format included for convenient browsing outside of formal analysis.
 
 
