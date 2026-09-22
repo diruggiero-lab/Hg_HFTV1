@@ -1,0 +1,1353 @@
+---
+title: "HFTV1_REANNOTATION"
+author: "mfisada"
+date: "2026-02-05"
+output: html_document
+---
+
+# === PACKAGES ===============================================================
+```{r}
+library(rtracklayer)
+library(tidyverse)
+library(tidyr)
+library(ivs) # For overlaps
+library(data.table) # For conversion from df to df
+library(Biostrings)
+library(phylotools) # For reading FASTA files
+library(seqinr) # For exporting FASTA files
+library(plyr)
+library(dplyr)
+library(plyranges) # For reading bigwigs
+```
+
+# === Hg/HFTV1 | IMPORT NCBI ANNOTATIONS =====================================
+```{r}
+# Create GRanges objects from annotation files
+HFTV1_NCBI_gtf_gr <- 
+  rtracklayer::import(
+    paste(
+      "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+      "GCF_004208775.1/genomic.gtf", sep = ""))
+Hg_NCBI_gtf_gr <- 
+  rtracklayer::import(
+    paste(
+      "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/H_GIBBONSII/",
+      "DL_20250521/GCF_014969745.1/Hg_genomic.gtf", sep = ""))
+
+# Convert GRanges to data.frame
+HFTV1_NCBI_gtf_df <- as.data.frame(HFTV1_NCBI_gtf_gr)
+Hg_NCBI_gtf_df <- as.data.frame(Hg_NCBI_gtf_gr)
+
+
+# Reformat NCBI GTF to meet formatting standards
+# https://agat.readthedocs.io/en/latest/gxf.html
+# https://biocorecrg.github.io/PhD_course_genomics_format_2021/gtf_format.html
+# https://www.biobam.com/differences-between-gtf-and-gff-files-in-genomic-data-analysis/
+# Column order:
+# col1    seqname
+# col2    source
+# col3    feature
+# col4    start
+# col5    end
+# col6    score
+# col7    strand
+# col8    frame
+# col9    attribute
+
+HFTV1_NCBI_gtf_df <-
+  HFTV1_NCBI_gtf_df %>%
+  # Remove columns
+  select(!width) %>%
+  # Rename columns
+  dplyr::rename(
+    seqname = seqnames,
+    feature = type,
+    frame = phase) %>%
+  # Relocate columns
+  relocate(source, .after = seqname) %>%
+  relocate(feature, .after = source) %>%
+  relocate(start, .after = feature) %>%
+  relocate(end, .after = start) %>%
+  relocate(score, .after = end) %>%
+  relocate(strand, .after = score) %>%
+  relocate(frame, .after = strand)
+
+Hg_NCBI_gtf_df <-
+  Hg_NCBI_gtf_df %>%
+  # Remove columns
+  select(!width) %>%
+  # Rename columns
+  dplyr::rename(
+    seqname = seqnames,
+    feature = type,
+    frame = phase) %>%
+  # Relocate columns
+  relocate(source, .after = seqname) %>%
+  relocate(feature, .after = source) %>%
+  relocate(start, .after = feature) %>%
+  relocate(end, .after = start) %>%
+  relocate(score, .after = end) %>%
+  relocate(strand, .after = score) %>%
+  relocate(frame, .after = strand)
+```
+
+# === HFTV1 | ANNOTATION REVISIONS FROM CRYO-EM PAPER ========================
+```{r}
+# Annotation information from: Daniel X. Zhang et al. ,Cryo-EM resolves the
+# structure of the archaeal dsDNA virus HFTV1 from head to tail.Sci.
+# Adv.11,eadx1178(2025).DOI:10.1126/sciadv.adx1178
+
+# Revise pre-existing HFTV1 annotations
+
+# GTF
+HFTV1_NCBI_gtf_df <- 
+  HFTV1_NCBI_gtf_df %>%
+  mutate(
+    # Change annotated product based on conditions below
+    product = 
+      case_when(
+        
+        # Change annotated product for individual locus tags. Exclude rows
+        # that have no predicted product; this is the case for the "gene"
+        # entry of each feature, which by default has no predicted product.
+        
+        # Structural components from Zhang et al., 2024, unpublished.
+        locus_tag == "M1M17_gp13" & 
+          !is.na(product) ~ "portal protein",
+        locus_tag == "M1M17_gp14" & 
+          !is.na(product) ~ "TMP-DNA spacer",
+        locus_tag == "M1M17_gp18" & 
+          !is.na(product) ~ "capsid stabilization protein",
+        locus_tag == "M1M17_gp19" & 
+          !is.na(product) ~ "major capsid protein",
+        locus_tag == "M1M17_gp21" & 
+          !is.na(product) ~ "portal interface protein",
+        locus_tag == "M1M17_gp26" & 
+          !is.na(product) ~ "head-tail connector",
+        locus_tag == "M1M17_gp29" & 
+          !is.na(product) ~ "tail completion protein",
+        locus_tag == "M1M17_gp30" & 
+          !is.na(product) ~ "turret base protein",
+        locus_tag == "M1M17_gp31" & 
+          !is.na(product) ~ "turret head protein",
+        locus_tag == "M1M17_gp35" & 
+          !is.na(product) ~ "tail tube protein",
+        locus_tag == "M1M17_gp40" & 
+          !is.na(product) ~ "tape measure protein",
+        locus_tag == "M1M17_gp41" & 
+          !is.na(product) ~ "baseplate-tail connector",
+        locus_tag == "M1M17_gp42" & 
+          !is.na(product) ~ "tail fibre protein",
+        locus_tag == "M1M17_gp44" & 
+          !is.na(product) ~ "baseplate hub",
+        
+        # Set original product values as default if none of the conditions
+        # above are met. 
+        TRUE ~ product))
+
+HFTV1_NCBI_gtf_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_NCBI_gtf_df, keep.extra.columns = TRUE)
+
+# === EXPORT ===
+
+# export(
+#   HFTV1_NCBI_gtf_gr,
+#   paste(
+#     "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+#     "GCF_004208775.1/ANNOT_FUNCTION_REVISION/HFTV1_NCBI_CRYOEM.gtf",
+#     sep = ""),
+#   "gff3")
+# 
+# write_csv(
+#   HFTV1_NCBI_gtf_df,
+#   paste(
+#     "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+#     "GCF_004208775.1/ANNOT_FUNCTION_REVISION/HFTV1_NCBI_CRYOEM.csv",
+#     sep = ""))
+
+```
+
+# === HFTV1 | IMPORT PHAROKKA/PHOLD (P/P) ANNOTATIONS ========================
+```{r}
+# Create GRanges object from annotation file
+HFTV1_PP_gff_gr <- 
+  rtracklayer::import(
+    paste(
+      "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+      "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/a_PHOLD_OUTPUT/",
+      "phold_no_dna.gff3", 
+      sep = ""))
+# Manually removed entry in phold output file corresponding to full genome. 
+
+# Convert GRanges to data.frame
+HFTV1_PP_gff_df <- 
+  as.data.frame(HFTV1_PP_gff_gr) %>%
+  mutate(
+    # All Pharokka-predicted features are assigned a phase value of 0 in the
+    # Pharokka GFF, but they are then switched to a phase value of 1 after
+    # structural homology predictions by Phold. This is presumably a technical
+    # error of the Phold GFF reformatting/output process. Consequently, convert
+    # all phase values from 1 to 0. 
+    phase = 0,
+    # Set all scores to NA.
+    score = NA)
+
+# Lines for report later
+HFTV1_PP_ct_line <-
+  paste(
+    "Number of PP features: ",
+    nrow(HFTV1_PP_gff_df), sep = "")
+
+HFTV1_PP_CDS_line <-
+  paste(
+    "Number of PP feature type 'CDS': ",
+    nrow(
+      HFTV1_PP_gff_df %>% filter(type == "CDS")), sep = "")
+HFTV1_PP_tRNA_line <-
+  paste(
+    "Number of PP feature type 'tRNA': ",
+    nrow(
+      HFTV1_PP_gff_df %>% filter(type == "tRNA")), sep = "")
+```
+
+# === HFTV1 | OVERLAPS BETWEEN P/P AND NCBI FEATURES =========================
+```{r}
+
+# === Subset HFTV1 GFF to compare with P/P features ===
+
+# Subset to CDSs (the only feature type in NCBI annotation besides gene,
+# start_codon, and stop_codon).
+HFTV1_NCBI_CDS_df <-
+  HFTV1_NCBI_gtf_df %>%
+  filter(feature == "CDS")
+
+HFTV1_NCBI_CDS_ct_line <- 
+  paste(
+    "Number of NCBI CDSs: ",
+    nrow(HFTV1_NCBI_CDS_df), sep = "")
+
+# Convert to GRanges to assess overlaps
+HFTV1_NCBI_CDS_gr <- 
+  makeGRangesFromDataFrame(HFTV1_NCBI_CDS_df, keep.extra.columns = TRUE)
+
+
+# === Find overlaps between NCBI and P/P-predicted features ===
+
+# P/P as query
+HFTV1_PP_NCBI_overlaps <-
+  findOverlaps(
+    HFTV1_PP_gff_gr,
+    HFTV1_NCBI_CDS_gr,
+    minoverlap = 60)
+HFTV1_PP_NCBI_hits_df <-
+  data.frame(
+    HFTV1_PP_gff_gr[queryHits(HFTV1_PP_NCBI_overlaps),],
+    HFTV1_NCBI_CDS_gr[subjectHits(HFTV1_PP_NCBI_overlaps),])
+
+# NCBI as query
+HFTV1_NCBI_PP_overlaps <-
+  findOverlaps(
+    HFTV1_NCBI_CDS_gr,
+    HFTV1_PP_gff_gr,
+    minoverlap = 60)
+HFTV1_NCBI_PP_hits_df <-
+  data.frame(
+    HFTV1_NCBI_CDS_gr[queryHits(HFTV1_NCBI_PP_overlaps),],
+    HFTV1_PP_gff_gr[subjectHits(HFTV1_NCBI_PP_overlaps),])
+
+
+# === Overlapping features ===
+
+# Output from both approaches below should be similar. 
+
+# P/P as query
+HFTV1_PP_NCBI_overlap_df <- 
+  inner_join(
+    HFTV1_PP_gff_df, 
+    HFTV1_PP_NCBI_hits_df[,c("start", "end")], 
+    by = c("start", "end"))
+
+HFTV1_PP_NCBI_overlap_line <- 
+  paste(
+    "Number of distinct overlapping features (P/P as query): ",
+    n_distinct(HFTV1_PP_NCBI_overlap_df$ID), sep = "")
+
+HFTV1_PP_NCBI_overlap_gr <- 
+  makeGRangesFromDataFrame(HFTV1_PP_NCBI_overlap_df, keep.extra.columns = TRUE)
+
+# export(
+#   HFTV1_PP_NCBI_overlap_gr,
+#   paste(
+#     "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+#     "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+#     "b_PP_NCBI_OVERLAPS/HFTV1_PP_NCBI_overlap.gff", sep = ""),
+#   "gff3")
+# write_csv(
+#   HFTV1_PP_NCBI_overlap_df,
+#   paste(
+#     "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+#     "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+#     "b_PP_NCBI_OVERLAPS/HFTV1_PP_NCBI_overlap.csv", sep = ""))
+
+# NCBI as query
+HFTV1_NCBI_PP_overlap_df <- 
+  inner_join(
+    HFTV1_NCBI_CDS_df, 
+    HFTV1_NCBI_PP_hits_df[,c("start", "end")], 
+    by = c("start", "end"))
+
+HFTV1_NCBI_PP_overlap_line <-
+  paste(
+    "Number of distinct overlapping features (NCBI as query): ",
+    n_distinct(HFTV1_NCBI_PP_overlap_df$gene_id), sep = "")
+
+HFTV1_NCBI_PP_overlap_gr <- 
+  makeGRangesFromDataFrame(HFTV1_NCBI_PP_overlap_df, keep.extra.columns = TRUE)
+
+# export(
+#   HFTV1_NCBI_PP_overlap_gr,
+#   paste(
+#     "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+#     "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+#     "b_PP_NCBI_OVERLAPS/HFTV1_NCBI_PP_overlap.gff", sep = ""),
+#   "gff3")
+# write_csv(
+#   HFTV1_NCBI_PP_overlap_df,
+#   paste(
+#     "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+#     "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+#     "b_PP_NCBI_OVERLAPS/HFTV1_NCBI_PP_overlap.csv", sep = ""))
+
+```
+
+# === HFTV1 | UNIQUE FEATURES OF NCBI AND P/P ================================
+```{r}
+
+# === Compile features unique to P/P prediction ===
+
+HFTV1_PP_unique_df <-
+  anti_join(
+    HFTV1_PP_gff_df,
+    HFTV1_PP_NCBI_hits_df[,c("start", "end")],
+    by = c("start", "end"))
+
+# Reformat unique P/P features to meet GTF column formatting requirements
+HFTV1_PP_unique_df <-
+  HFTV1_PP_unique_df %>%
+  mutate(
+    source = "Pharokka_Phold",
+    # Adjust end position; standard GTF format requires CDS end to exclude
+    # stop codon, whereas default Pharokka/Phold output includes stop codon.
+    end = end - 3) %>%
+  # Remove columns
+  select(!width) %>%
+  # Rename columns
+  dplyr::rename(
+    seqname = seqnames,
+    feature = type,
+    frame = phase) %>%
+  # Relocate columns
+  relocate(source, .after = seqname) %>%
+  relocate(feature, .after = source) %>%
+  relocate(start, .after = feature) %>%
+  relocate(end, .after = start) %>%
+  relocate(score, .after = end) %>%
+  relocate(strand, .after = score) %>%
+  relocate(frame, .after = strand)
+
+HFTV1_PP_unique_line <-
+  paste(
+    "Number of distinct features unique to P/P: ",
+    n_distinct(HFTV1_PP_unique_df$ID), sep = "")
+
+HFTV1_PP_unique_gr <-
+  makeGRangesFromDataFrame(HFTV1_PP_unique_df, keep.extra.columns = TRUE)
+
+# export(
+#   HFTV1_PP_unique_gr,
+#   paste(
+#     "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+#     "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+#     "c_PP_NCBI_UNIQUE/HFTV1_PP_unique.gff", sep = ""),
+#   "gff3")
+# write_csv(
+#   HFTV1_PP_unique_df,
+#   paste(
+#     "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+#     "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+#     "c_PP_NCBI_UNIQUE/HFTV1_PP_unique.csv", sep = ""))
+
+# === Compile features unique to NCBI ===
+
+HFTV1_NCBI_unique_df <-
+  anti_join(
+    HFTV1_NCBI_CDS_df,
+    HFTV1_NCBI_PP_hits_df[,c("start", "end")],
+    by = c("start", "end"))
+
+HFTV1_NCBI_unique_line <-
+  paste(
+    "Number of distinct features unique to NCBI: ",
+    n_distinct(HFTV1_NCBI_unique_df$gene_id), sep = "")
+
+HFTV1_NCBI_unique_gr <-
+  makeGRangesFromDataFrame(HFTV1_NCBI_unique_df, keep.extra.columns = TRUE)
+
+# export(
+#   HFTV1_NCBI_unique_gr,
+#   paste(
+#     "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+#     "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+#     "c_PP_NCBI_UNIQUE/HFTV1_NCBI_unique.gff", sep = ""),
+#   "gff3")
+# write_csv(
+#   HFTV1_NCBI_unique_df,
+#   paste(
+#     "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+#     "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+#     "c_PP_NCBI_UNIQUE/HFTV1_NCBI_unique.csv", sep = ""))
+
+
+```
+
+# === HFTV1 | NCBI-P/P REPORT ================================================
+```{r}
+# # Write various useful statistics to report file
+# report_file <-
+#   file(
+#     paste(
+#       "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+#       "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+#       "d_PP_NCBI_SUMMARY/report.txt", sep=""))
+# # Write lines to file
+# writeLines(
+#   c(
+#     HFTV1_NCBI_CDS_ct_line,
+#     HFTV1_PP_ct_line,
+#     HFTV1_PP_CDS_line,
+#     HFTV1_PP_tRNA_line,
+#     HFTV1_PP_NCBI_overlap_line,
+#     HFTV1_NCBI_PP_overlap_line,
+#     HFTV1_PP_unique_line,
+#     HFTV1_NCBI_unique_line),
+#   report_file)
+# # Close file
+# close(report_file)
+```
+
+# === HFTV1 | REFORMATTING UNIQUE P/P FEATURES FOR GTF =======================
+```{r}
+HFTV1_PP_unique_df <-
+  HFTV1_PP_unique_df %>%
+  mutate(
+    # Rename tRNA feature type to "transcript" per Hg NCBI format. 
+    feature = str_replace(
+      feature, 
+      pattern = "tRNA", 
+      replacement = "transcript")) %>%
+  # Rename columns to match NCBI format
+  dplyr::rename(gene_id = ID) %>%
+  dplyr::rename(transcript_id = Name) %>%
+  # Remove certain columns to match NCBI format
+  select(!c(
+    function., phrog, source.1, translation, anticodon, isotype, trna)) %>%
+  # Create new columns to match NCBI format
+  mutate(
+    gene_biotype = NA,
+    transcript_id = paste("unassigned_transcript_", transcript_id, sep = ""),
+    db_xref = paste("GeneID:MFI_PP_", gene_id, sep = ""),
+    gbkey = NA,
+    locus_tag = gene_id,
+    old_locus_tag = NA,
+    protein_id = NA,
+    note = NA,
+    exon_number = NA) %>%
+  # Set frame to NA for tRNA
+  mutate(frame = case_when(feature == "transcript" ~ NA, TRUE ~ frame)) %>%
+  relocate(db_xref, .after = transcript_id) %>%
+  relocate(gbkey, .after = db_xref) %>%
+  relocate(gene_biotype, .after = gbkey) %>%
+  relocate(locus_tag, .after = gene_biotype) %>%
+  relocate(old_locus_tag, .after = locus_tag) %>%
+  relocate(product, .after = old_locus_tag) %>%
+  relocate(protein_id, .after = product) %>%
+  relocate(transl_table, .after = protein_id) %>%
+  relocate(exon_number, .after = transl_table) %>%
+  relocate(note, .after = exon_number)
+
+HFTV1_PP_unique_df$source <- as.factor(HFTV1_PP_unique_df$source)
+  
+# Subset unique P/P features to CDSs
+HFTV1_PP_unique_CDS_df <-
+  HFTV1_PP_unique_df %>%
+  filter(feature == "CDS")
+
+# === GTF formatting for P/P features
+
+# Make gene entries for CDSs
+HFTV1_PP_unique_gene_entries_df <-
+  HFTV1_PP_unique_CDS_df %>%
+  mutate(
+    feature = "gene",
+    frame = NA,
+    end = end + 3,
+    gene_biotype = "protein_coding",
+    transcript_id = "")
+# Make start codon entries
+HFTV1_PP_unique_start_entries_df <-
+  HFTV1_PP_unique_CDS_df %>%
+  mutate(
+    feature = "start_codon",
+    end = start + 2)
+# Make stop codon entries
+HFTV1_PP_unique_stop_entries_df <-
+  HFTV1_PP_unique_CDS_df %>%
+  mutate(
+    feature = "stop_codon",
+    start = end + 1,
+    end = end + 3)
+
+# Make gene entries for tRNA
+HFTV1_PP_unique_tRNA_gene_entries_df <-
+  HFTV1_PP_unique_df %>% 
+  filter(feature == "transcript") %>%
+  mutate(
+    feature = "gene",
+    frame = NA)
+# Make exon entries for tRNA
+HFTV1_PP_unique_tRNA_exon_entries_df <-
+  HFTV1_PP_unique_df %>% 
+  filter(feature == "transcript") %>%
+  mutate(
+    feature = "exon",
+    frame = NA)
+
+# Combine all features together
+HFTV1_PP_unique_gtf_df <-
+  rbind(
+    # All P/P unique features, including both CDSs and the tRNA
+    HFTV1_PP_unique_df,
+    # All gene entries for CDSs
+    HFTV1_PP_unique_gene_entries_df,
+    # All gene entries for tRNA (should be just one)
+    HFTV1_PP_unique_tRNA_gene_entries_df,
+    # All exon entries for tRNA (should be just one)
+    HFTV1_PP_unique_tRNA_exon_entries_df,
+    # All start codon entries for CDSs
+    HFTV1_PP_unique_start_entries_df,
+    # All stop codon entries for CDSs
+    HFTV1_PP_unique_stop_entries_df)
+
+# Set factor levels of features
+HFTV1_PP_unique_gtf_df$feature <-
+  factor(
+    HFTV1_PP_unique_gtf_df$feature,
+    levels = c(
+      "gene", "CDS", "transcript", "exon", "start_codon", "stop_codon"))
+
+# Revise columns to be consistent with GTF format
+HFTV1_PP_unique_gtf_df %>%
+  mutate(
+    gbkey = case_when(
+      feature == "gene" ~ "Gene",
+      feature == "CDS" ~ "CDS",
+      feature == "transcript" ~ "tRNA",
+      feature == "exon" ~ NA,
+      TRUE ~ NA))
+
+# Arrange GTF by start position and feature (factor)
+HFTV1_PP_unique_gtf_df <-
+  HFTV1_PP_unique_gtf_df %>%
+  arrange(start, feature)
+
+HFTV1_PP_unique_gtf_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_PP_unique_gtf_df, keep.extra.columns = TRUE)
+
+HFTV1_PP_unique_genes_gtf_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_PP_unique_gtf_df %>% 
+      filter(feature == "gene"), keep.extra.columns = TRUE)
+
+# === EXPORT ===
+
+export(
+  HFTV1_PP_unique_gtf_gr,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+    "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+    "c_PP_NCBI_UNIQUE/HFTV1_PP_unique_reformat.gtf", sep = ""),
+  "gff3")
+
+export(
+  HFTV1_PP_unique_genes_gtf_gr,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+    "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+    "c_PP_NCBI_UNIQUE/HFTV1_PP_unique_genes_reformat.gtf", sep = ""),
+  "gff3")
+
+write_csv(
+  HFTV1_PP_unique_gtf_df,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+    "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+    "c_PP_NCBI_UNIQUE/HFTV1_PP_unique_reformat.csv", sep = ""))
+```
+
+# === HFTV1 | CONSENSUS GTF OF NCBI AND UNIQUE P/P FEATURES ==================
+```{r}
+
+# Combine NCBI and unique P/P features
+HFTV1_NCBI_PP_gtf_df <-
+  rbind(
+    HFTV1_NCBI_gtf_df,
+    HFTV1_PP_unique_gtf_df) %>%
+  mutate(Name = gene_id)
+
+# Arrange GTF by mean start position per locus tag, then by feature (factor);
+# add and then remove mean start position column. 
+HFTV1_NCBI_PP_gtf_df <-
+  HFTV1_NCBI_PP_gtf_df %>%
+  group_by(locus_tag) %>%
+  dplyr::mutate(mean_start = mean(start)) %>%
+  ungroup() %>%
+  arrange(mean_start, locus_tag, feature) %>%
+  select(!mean_start)
+
+# Convert GTF to Granges object for export
+HFTV1_NCBI_PP_gtf_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_NCBI_PP_gtf_df, keep.extra.columns = TRUE)
+
+# Subset GTF to "gene" entries only (easier for visualization in IGV), then
+# convert GTF to Granges object for export.
+HFTV1_NCBI_PP_genes_gtf_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_NCBI_PP_gtf_df %>% 
+      filter(feature == "gene"), keep.extra.columns = TRUE)
+
+export(
+  HFTV1_NCBI_PP_gtf_gr,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+    "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+    "e_PP_NCBI_CONSENSUS/HFTV1_NCBI_PP_consensus.gtf", sep = ""),
+  "gff3")
+
+write_csv(
+  HFTV1_NCBI_PP_gtf_df,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+    "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+    "e_PP_NCBI_CONSENSUS/HFTV1_NCBI_PP_consensus.csv", sep = ""))
+
+export(
+  HFTV1_NCBI_PP_genes_gtf_gr,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+    "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+    "e_PP_NCBI_CONSENSUS/HFTV1_NCBI_PP_genes_consensus.gtf", sep = ""),
+  "gff3")
+
+write_csv(
+  HFTV1_NCBI_PP_gtf_df %>%
+    filter(feature == "gene"),
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+    "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+    "e_PP_NCBI_CONSENSUS/HFTV1_NCBI_PP_genes_consensus.csv", sep = ""))
+```
+
+# === HFTV1 | RENAMING BASED ON TQ RNA-SEQ PAPER =============================
+```{r}
+# Rename genes with more standardized format
+HFTV1_NCBI_PP_newnames_gtf_df <-
+  HFTV1_NCBI_PP_gtf_df %>%
+  mutate(
+    gene_id = case_when(
+      gene_id == "MNCMNMYK_CDS_0006" ~ "M1M17_gp06a",
+      gene_id == "MNCMNMYK_CDS_0014" ~ "M1M17_gp13a",
+      gene_id == "MNCMNMYK_CDS_0027" ~ "M1M17_gp25a",
+      gene_id == "MNCMNMYK_CDS_0036" ~ "M1M17_gp33a",
+      gene_id == "MNCMNMYK_CDS_0044" ~ "M1M17_gp39a",
+      gene_id == "MNCMNMYK_CDS_0050" ~ "M1M17_gp46c",
+      gene_id == "MNCMNMYK_CDS_0051" ~ "M1M17_gp46a",
+      gene_id == "MNCMNMYK_CDS_0052" ~ "M1M17_gp46b",
+      gene_id == "MNCMNMYK_CDS_0058" ~ "M1M17_gp50b",
+      gene_id == "MNCMNMYK_CDS_0059" ~ "M1M17_gp50c",
+      gene_id == "MNCMNMYK_CDS_0060" ~ "M1M17_gp52a",
+      gene_id == "MNCMNMYK_CDS_0061" ~ "M1M17_gp52b",
+      gene_id == "MNCMNMYK_CDS_0071" ~ "M1M17_gp61a",
+      gene_id == "MNCMNMYK_CDS_0075" ~ "M1M17_gp64a",
+      gene_id == "MNCMNMYK_CDS_0078" ~ "M1M17_gp66a",
+      gene_id == "MNCMNMYK_CDS_0080" ~ "M1M17_gp67a",
+      gene_id == "MNCMNMYK_tRNA_0001" ~ "M1M17_tRNA01",
+      TRUE ~ gene_id),
+    Name = case_when(
+      Name == "MNCMNMYK_CDS_0006" ~ "M1M17_gp06a",
+      Name == "MNCMNMYK_CDS_0014" ~ "M1M17_gp13a",
+      Name == "MNCMNMYK_CDS_0027" ~ "M1M17_gp25a",
+      Name == "MNCMNMYK_CDS_0036" ~ "M1M17_gp33a",
+      Name == "MNCMNMYK_CDS_0044" ~ "M1M17_gp39a",
+      Name == "MNCMNMYK_CDS_0050" ~ "M1M17_gp46c",
+      Name == "MNCMNMYK_CDS_0051" ~ "M1M17_gp46a",
+      Name == "MNCMNMYK_CDS_0052" ~ "M1M17_gp46b",
+      Name == "MNCMNMYK_CDS_0058" ~ "M1M17_gp50b",
+      Name == "MNCMNMYK_CDS_0059" ~ "M1M17_gp50c",
+      Name == "MNCMNMYK_CDS_0060" ~ "M1M17_gp52a",
+      Name == "MNCMNMYK_CDS_0061" ~ "M1M17_gp52b",
+      Name == "MNCMNMYK_CDS_0071" ~ "M1M17_gp61a",
+      Name == "MNCMNMYK_CDS_0075" ~ "M1M17_gp64a",
+      Name == "MNCMNMYK_CDS_0078" ~ "M1M17_gp66a",
+      Name == "MNCMNMYK_CDS_0080" ~ "M1M17_gp67a",
+      Name == "MNCMNMYK_tRNA_0001" ~ "M1M17_tRNA01",
+      TRUE ~ Name),
+    locus_tag = case_when(
+      locus_tag == "MNCMNMYK_CDS_0006" ~ "M1M17_gp06a",
+      locus_tag == "MNCMNMYK_CDS_0014" ~ "M1M17_gp13a",
+      locus_tag == "MNCMNMYK_CDS_0027" ~ "M1M17_gp25a",
+      locus_tag == "MNCMNMYK_CDS_0036" ~ "M1M17_gp33a",
+      locus_tag == "MNCMNMYK_CDS_0044" ~ "M1M17_gp39a",
+      locus_tag == "MNCMNMYK_CDS_0050" ~ "M1M17_gp46c",
+      locus_tag == "MNCMNMYK_CDS_0051" ~ "M1M17_gp46a",
+      locus_tag == "MNCMNMYK_CDS_0052" ~ "M1M17_gp46b",
+      locus_tag == "MNCMNMYK_CDS_0058" ~ "M1M17_gp50b",
+      locus_tag == "MNCMNMYK_CDS_0059" ~ "M1M17_gp50c",
+      locus_tag == "MNCMNMYK_CDS_0060" ~ "M1M17_gp52a",
+      locus_tag == "MNCMNMYK_CDS_0061" ~ "M1M17_gp52b",
+      locus_tag == "MNCMNMYK_CDS_0071" ~ "M1M17_gp61a",
+      locus_tag == "MNCMNMYK_CDS_0075" ~ "M1M17_gp64a",
+      locus_tag == "MNCMNMYK_CDS_0078" ~ "M1M17_gp66a",
+      locus_tag == "MNCMNMYK_CDS_0080" ~ "M1M17_gp67a",
+      locus_tag == "MNCMNMYK_tRNA_0001" ~ "M1M17_tRNA01",
+      TRUE ~ locus_tag)) %>%
+  mutate(
+    Parent = paste("gene-", gene_id, sep = ""),
+    ID = paste(str_to_lower(feature), "-", Name, sep = ""))
+
+# Convert GTF to Granges object for export
+HFTV1_NCBI_PP_newnames_gtf_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_NCBI_PP_newnames_gtf_df, keep.extra.columns = TRUE)
+
+# === EXPORT ===
+
+export(
+  HFTV1_NCBI_PP_newnames_gtf_gr,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+    "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+    "f_PP_NCBI_CONSENSUS_NEWNAMES/HFTV1_NCBI_PP_consensus.gtf",
+    sep = ""),
+  "gff3")
+write_csv(
+  HFTV1_NCBI_PP_newnames_gtf_df,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+    "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+    "f_PP_NCBI_CONSENSUS_NEWNAMES/HFTV1_NCBI_PP_consensus_gtf.csv",
+    sep = ""))
+```
+
+# === HFTV1 | RENAMING BASED ON TQ RNA-SEQ PAPER | GTF TO GFF ================
+```{r}
+# Make adjustments for GFF, then convert to GRanges object
+HFTV1_NCBI_PP_newnames_gff_df <-
+  HFTV1_NCBI_PP_newnames_gtf_df %>%
+  dplyr::rename(
+    type = feature,
+    phase = frame) %>%
+  filter(type != "start_codon") %>%
+  filter(type != "stop_codon") %>%
+  mutate(
+    width = abs(end - start) + 1,
+    end = case_when(
+      type == "CDS" ~ end + 3,
+      TRUE ~ end)) %>%
+  select(!gene_id) %>%
+  select(!transcript_id)
+HFTV1_NCBI_PP_newnames_gff_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_NCBI_PP_newnames_gff_df, keep.extra.columns = TRUE)
+
+# === EXPORT ===
+
+# GFF for easy visualization in IGV
+export(
+  HFTV1_NCBI_PP_newnames_gff_gr,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+    "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+    "f_PP_NCBI_CONSENSUS_NEWNAMES/HFTV1_NCBI_PP_consensus.gff",
+    sep = ""),
+  "gff3")
+write_csv(
+  HFTV1_NCBI_PP_newnames_gff_df,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+    "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+    "f_PP_NCBI_CONSENSUS_NEWNAMES/HFTV1_NCBI_PP_consensus_gff.csv",
+    sep = ""))
+write_csv(
+  HFTV1_NCBI_PP_newnames_gff_df %>% filter(type == "CDS"),
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+    "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+    "f_PP_NCBI_CONSENSUS_NEWNAMES/HFTV1_NCBI_PP_consensus_gff_cds.csv",
+    sep = ""))
+
+
+```
+
+# === NOTES ON INCOMPATABILITIES BETWEEN GTFs AND Rtracklayer ================
+```{r}
+# Notes on issues with handling GTFs through Rtracklayer:
+# https://support.bioconductor.org/p/70054/
+```
+
+# === HFTV1 | +/- HHT | REVISED ANNOTATION | CONSTRUCT + EXPORT ==============
+```{r}
+# Working with GFF now because my exported GTFs from above are really in
+# GFF format (Rtracklayer apparently squeezes everything into GFF format, 
+# and GFF v2 seems to differ from GTF as far as I can tell, despite
+# contradictory reports online).
+
+# Remove gp46c, gp52a, and gp52b - these were P/P-based predicted features
+# unique to my analysis, and they showed very little evidence of TSSs in my
+# HHT data. 
+
+# Other adjustments (N-terminal extensions, N-terminal truncations, and
+# addition of novel ORF - are based on manual inspection of +/-HHT data 
+# in IGV).
+
+HFTV1_NCBI_PP_gff_gr <-
+  rtracklayer::import(
+    paste(
+      "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+      "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+      "f_PP_NCBI_CONSENSUS_NEWNAMES/HFTV1_NCBI_PP_consensus.gff",
+      sep = ""))
+HFTV1_NCBI_PP_gff_df <- 
+  as.data.frame(HFTV1_NCBI_PP_gff_gr) %>%
+  rowwise() %>%
+  dplyr::mutate(Parent = paste(Parent, collapse="")) %>%
+  ungroup()
+
+HFTV1_NCBI_PP_HHT_gff_df <-
+  HFTV1_NCBI_PP_gff_df %>%
+  mutate(
+    start = case_when(
+      # N-terminal extensions
+      locus_tag == "M1M17_gp12" ~ start - 5*3,
+      locus_tag == "M1M17_gp21" ~ start - 8*3,
+      locus_tag == "M1M17_gp19" ~ start - 22*3,
+      locus_tag == "M1M17_gp30" ~ start - 50*3,
+      locus_tag == "M1M17_gp66a" ~ start - 10*3,
+      # N-terminal truncations
+      locus_tag == "M1M17_gp05" ~ start + 18*3,
+      locus_tag == "M1M17_gp56" ~ start + 39*3,
+      locus_tag == "M1M17_gp67" ~ start + 5*3,
+      TRUE ~ start)) %>%
+  
+  # Add novel features
+  
+  # gp52c
+  add_row(
+    seqnames = "NC_062739.1",
+    start = 28684,
+    end = 29004,
+    width = end - start + 1,
+    strand = "+",
+    source = "JDR_HHT",
+    type = "gene",
+    score = NA,
+    phase = NA,
+    db_xref = NA,
+    gbkey = "Gene",
+    gene_biotype = "protein_coding",
+    locus_tag = "M1M17_gp52c",
+    old_locus_tag = NA,
+    Name = "M1M17_gp52c",
+    Parent = "gene-M1M17_gp52c",
+    ID = "gene-M1M17_gp52c",
+    product = NA,
+    protein_id = NA,
+    transl_table = NA,
+    exon_number = NA,
+    note = NA) %>%
+  add_row(
+    seqnames = "NC_062739.1",
+    start = 28684,
+    end = 29004,
+    width = end - start + 1,
+    strand = "+",
+    source = "JDR_HHT",
+    type = "CDS",
+    score = NA,
+    phase = 0,
+    db_xref = NA,
+    gbkey = "CDS",
+    gene_biotype = "NA",
+    locus_tag = "M1M17_gp52c",
+    old_locus_tag = NA,
+    Name = "M1M17_gp52c",
+    Parent = "gene-M1M17_gp52c",
+    ID = "cds-M1M17_gp52c",
+    # Product based on Interpro-predicted domains
+    product = "winged helix protein",
+    protein_id = NA,
+    transl_table = NA,
+    exon_number = NA,
+    note = NA) %>%
+  
+  # Remove P/P features that were not detected based on normalized HHT data
+  
+  filter(!Name == "M1M17_gp46c") %>%
+  filter(!Name == "M1M17_gp52a") %>%
+  filter(!Name == "M1M17_gp52b")
+  
+HFTV1_NCBI_PP_HHT_gff_df <-
+  HFTV1_NCBI_PP_HHT_gff_df %>%
+  group_by(locus_tag) %>%
+  dplyr::mutate(mean_start = mean(start)) %>%
+  ungroup() %>%
+  arrange(mean_start, locus_tag, type) %>%
+  select(!mean_start)
+
+HFTV1_NCBI_PP_HHT_gff_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_NCBI_PP_HHT_gff_df, keep.extra.columns = TRUE)
+
+export(
+  HFTV1_NCBI_PP_HHT_gff_gr,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+    "RNA_RBO/c_ANA/b_REANNOTATION/MNL/h_REVISED_ANNOTATIONS/",
+    "HFTV1_NCBI_PP_HHT_consensus.gff",
+    sep = ""),
+  "gff3")
+
+write_csv(
+  HFTV1_NCBI_PP_HHT_gff_df,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+    "RNA_RBO/c_ANA/b_REANNOTATION/MNL/h_REVISED_ANNOTATIONS/",
+    "HFTV1_NCBI_PP_HHT_consensus_gff.csv",
+    sep = ""))
+```
+
+# === HFTV1 | +/- HHT | REVISED ANNOTATION | HG MERGE + EXPORT ===============
+```{r}
+# Convert Hg NCBI annotation to the same GFF format as splitgp17
+# Make adjustments for GFF, then convert to GRanges object
+Hg_NCBI_gff_df <-
+  Hg_NCBI_gtf_df %>%
+  dplyr::rename(
+    type = feature,
+    phase = frame,
+    seqnames = seqname) %>%
+  filter(type != "start_codon") %>%
+  filter(type != "stop_codon") %>%
+  mutate(Name = locus_tag) %>%
+  mutate(
+    width = abs(end - start) + 1,
+    end = case_when(
+      type == "CDS" ~ end + 3,
+      TRUE ~ end)) %>%
+  mutate(
+    Parent = paste("gene-", gene_id, sep = ""),
+    ID = paste(str_to_lower(type), "-", Name, sep = "")) %>%
+  select(c(
+    seqnames, start, end, width, strand, source, type, score, phase,
+    db_xref, gbkey, gene_biotype, locus_tag, old_locus_tag, Name, Parent,
+    ID, product, protein_id, transl_table, exon_number, note))
+
+HFTV1_Hg_gff_df <-
+  rbind(
+    HFTV1_NCBI_PP_HHT_gff_df,
+    Hg_NCBI_gff_df)
+
+HFTV1_Hg_gff_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_Hg_gff_df, keep.extra.columns = TRUE)
+
+export(
+  HFTV1_Hg_gff_gr,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+    "RNA_RBO/c_ANA/b_REANNOTATION/MNL/h_REVISED_ANNOTATIONS/",
+    "HFTV1_Hg.gff",
+    sep = ""),
+  "gff3")
+
+write_csv(
+  HFTV1_Hg_gff_df,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+    "RNA_RBO/c_ANA/b_REANNOTATION/MNL/h_REVISED_ANNOTATIONS/",
+    "HFTV1_Hg_gff.csv",
+    sep = ""))
+```
+
+# === HFTV1 | +/- HHT | REVISED ANNOTATION | CONSTRUCT + EXPORT AND HG MERGE
+# + EXPORT | INCLUDE LOW-CONFIDENCE FEATURES FOR MS ==========================
+```{r}
+# Same as above, but retain low-conf features for search in MS data. 
+
+HFTV1_NCBI_PP_gff_gr <-
+  rtracklayer::import(
+    paste(
+      "/Users/mi/DIRUGGIERO_LAB/REFERENCES/SEQ/HFTV1/DL_20240430/",
+      "GCF_004208775.1/ANNOT_FUNCTION_REVISION/PHOLD_ANNOT/",
+      "f_PP_NCBI_CONSENSUS_NEWNAMES/HFTV1_NCBI_PP_consensus.gff",
+      sep = ""))
+
+HFTV1_NCBI_PP_gff_df <- 
+  as.data.frame(HFTV1_NCBI_PP_gff_gr) %>%
+  rowwise() %>%
+  dplyr::mutate(Parent = paste(Parent, collapse="")) %>%
+  ungroup()
+
+HFTV1_NCBI_PP_HHT_gff_df <-
+  HFTV1_NCBI_PP_gff_df %>%
+  mutate(
+    start = case_when(
+      # N-terminal extensions
+      locus_tag == "M1M17_gp12" ~ start - 5*3,
+      locus_tag == "M1M17_gp21" ~ start - 8*3,
+      locus_tag == "M1M17_gp19" ~ start - 22*3,
+      locus_tag == "M1M17_gp30" ~ start - 50*3,
+      locus_tag == "M1M17_gp66a" ~ start - 10*3,
+      # N-terminal truncations
+      locus_tag == "M1M17_gp05" ~ start + 18*3,
+      locus_tag == "M1M17_gp56" ~ start + 39*3,
+      locus_tag == "M1M17_gp67" ~ start + 5*3,
+      TRUE ~ start)) %>%
+  
+  # Add novel features
+  
+  # gp52c
+  add_row(
+    seqnames = "NC_062739.1",
+    start = 28684,
+    end = 29004,
+    width = end - start + 1,
+    strand = "+",
+    source = "JDR_HHT",
+    type = "gene",
+    score = NA,
+    phase = NA,
+    db_xref = NA,
+    gbkey = "Gene",
+    gene_biotype = "protein_coding",
+    locus_tag = "M1M17_gp52c",
+    old_locus_tag = NA,
+    Name = "M1M17_gp52c",
+    Parent = "gene-M1M17_gp52c",
+    ID = "gene-M1M17_gp52c",
+    product = NA,
+    protein_id = NA,
+    transl_table = NA,
+    exon_number = NA,
+    note = NA) %>%
+  add_row(
+    seqnames = "NC_062739.1",
+    start = 28684,
+    end = 29004,
+    width = end - start + 1,
+    strand = "+",
+    source = "JDR_HHT",
+    type = "CDS",
+    score = NA,
+    phase = 0,
+    db_xref = NA,
+    gbkey = "CDS",
+    gene_biotype = "NA",
+    locus_tag = "M1M17_gp52c",
+    old_locus_tag = NA,
+    Name = "M1M17_gp52c",
+    Parent = "gene-M1M17_gp52c",
+    ID = "cds-M1M17_gp52c",
+    # Product based on Interpro-predicted domains
+    product = "winged helix protein",
+    protein_id = NA,
+    transl_table = NA,
+    exon_number = NA,
+    note = NA)
+  
+HFTV1_NCBI_PP_HHT_gff_df <-
+  HFTV1_NCBI_PP_HHT_gff_df %>%
+  group_by(locus_tag) %>%
+  dplyr::mutate(mean_start = mean(start)) %>%
+  ungroup() %>%
+  arrange(mean_start, locus_tag, type) %>%
+  select(!mean_start)
+
+HFTV1_NCBI_PP_HHT_gff_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_NCBI_PP_HHT_gff_df, keep.extra.columns = TRUE)
+
+export(
+  HFTV1_NCBI_PP_HHT_gff_gr,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+    "RNA_RBO/c_ANA/b_REANNOTATION/MNL/h_REVISED_ANNOTATIONS/MS_annots/",
+    "HFTV1_NCBI_PP_HHT_consensus_forMS.gff",
+    sep = ""),
+  "gff3")
+
+write_csv(
+  HFTV1_NCBI_PP_HHT_gff_df,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+    "RNA_RBO/c_ANA/b_REANNOTATION/MNL/h_REVISED_ANNOTATIONS/MS_annots/",
+    "HFTV1_NCBI_PP_HHT_consensus_gff_forMS.csv",
+    sep = ""))
+
+# MERGE WITH HG
+# Convert Hg NCBI annotation to the same GFF format as splitgp17
+# Make adjustments for GFF, then convert to GRanges object
+Hg_NCBI_gff_df <-
+  Hg_NCBI_gtf_df %>%
+  dplyr::rename(
+    type = feature,
+    phase = frame,
+    seqnames = seqname) %>%
+  filter(type != "start_codon") %>%
+  filter(type != "stop_codon") %>%
+  mutate(Name = locus_tag) %>%
+  mutate(
+    width = abs(end - start) + 1,
+    end = case_when(
+      type == "CDS" ~ end + 3,
+      TRUE ~ end)) %>%
+  mutate(
+    Parent = paste("gene-", gene_id, sep = ""),
+    ID = paste(str_to_lower(type), "-", Name, sep = "")) %>%
+  select(c(
+    seqnames, start, end, width, strand, source, type, score, phase,
+    db_xref, gbkey, gene_biotype, locus_tag, old_locus_tag, Name, Parent,
+    ID, product, protein_id, transl_table, exon_number, note))
+
+HFTV1_Hg_gff_df <-
+  rbind(
+    HFTV1_NCBI_PP_HHT_gff_df,
+    Hg_NCBI_gff_df) 
+
+HFTV1_Hg_gff_df$type <- 
+  factor(
+    HFTV1_Hg_gff_df$type, 
+    levels = c("gene", "transcript", "CDS", "exon"))
+
+HFTV1_Hg_gff_df <-
+  HFTV1_Hg_gff_df %>%
+  group_by(locus_tag) %>%
+  # Calculate mean start position for arranging features
+  dplyr::mutate(mean_start = mean(start)) %>%
+  # Fill in db_xref values within each locus tag
+  fill(db_xref, .direction = "downup") %>%
+  ungroup() %>%
+  arrange(seqnames, mean_start, locus_tag, type) %>%
+  select(!mean_start)
+
+HFTV1_Hg_gff_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_Hg_gff_df, keep.extra.columns = TRUE)
+
+export(
+  HFTV1_Hg_gff_gr,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+    "RNA_RBO/c_ANA/b_REANNOTATION/MNL/h_REVISED_ANNOTATIONS/MS_annots/",
+    "HFTV1_Hg_forMS.gff",
+    sep = ""),
+  "gff3")
+
+write_csv(
+  HFTV1_Hg_gff_df,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+    "RNA_RBO/c_ANA/b_REANNOTATION/MNL/h_REVISED_ANNOTATIONS/MS_annots/",
+    "HFTV1_Hg_gff_forMS.csv",
+    sep = ""))
+```
+
+# === HFTV1 | +/- HHT | REVISED ANNOTATION | gp17 | SPLIT + EXPORT ===========
+```{r}
+# Create version of annotation with split gp17 feature
+HFTV1_NCBI_PP_HHT_splitgp17_gff_df <-
+  HFTV1_NCBI_PP_HHT_gff_df %>%
+  
+  # Remove gp17 entries
+  filter(locus_tag != "M1M17_gp17") %>%
+  
+  # gp17_NTERM
+  add_row(
+    seqnames = "NC_062739.1",
+    start = 7106,
+    end = 7981,
+    width = end - start + 1,
+    strand = "+",
+    source = "JDR_HHT",
+    type = "gene",
+    score = NA,
+    phase = NA,
+    db_xref = NA,
+    gbkey = "Gene",
+    gene_biotype = "protein_coding",
+    locus_tag = "M1M17_gp17_NTERM",
+    old_locus_tag = NA,
+    Name = "M1M17_gp17_NTERM",
+    Parent = "gene-M1M17_gp17_NTERM",
+    ID = "gene-M1M17_gp17_NTERM",
+    product = NA,
+    protein_id = NA,
+    transl_table = NA,
+    exon_number = NA,
+    note = NA) %>%
+  add_row(
+    seqnames = "NC_062739.1",
+    start = 7106,
+    end = 7981,
+    width = end - start + 1,
+    strand = "+",
+    source = "JDR_HHT",
+    type = "CDS",
+    score = NA,
+    phase = 0,
+    db_xref = NA,
+    gbkey = "CDS",
+    gene_biotype = "NA",
+    locus_tag = "M1M17_gp17_NTERM",
+    old_locus_tag = NA,
+    Name = "M1M17_gp17_NTERM",
+    Parent = "gene-M1M17_gp17_NTERM",
+    ID = "cds-M1M17_gp17_NTERM",
+    product = "P2 gpO-like scaffolding/protease protein",
+    protein_id = NA,
+    transl_table = NA,
+    exon_number = NA,
+    note = NA) %>%
+
+
+  # gp17_CTERM
+  add_row(
+    seqnames = "NC_062739.1",
+    start = 7982,
+    end = 8548,
+    width = end - start + 1,
+    strand = "+",
+    source = "JDR_HHT",
+    type = "gene",
+    score = NA,
+    phase = NA,
+    db_xref = NA,
+    gbkey = "Gene",
+    gene_biotype = "protein_coding",
+    locus_tag = "M1M17_gp17_CTERM",
+    old_locus_tag = NA,
+    Name = "M1M17_gp17_CTERM",
+    Parent = "gene-M1M17_gp17_CTERM",
+    ID = "gene-M1M17_gp17_CTERM",
+    product = NA,
+    protein_id = NA,
+    transl_table = NA,
+    exon_number = NA,
+    note = NA) %>%
+  add_row(
+    seqnames = "NC_062739.1",
+    start = 7982,
+    end = 8548,
+    width = end - start + 1,
+    strand = "+",
+    source = "JDR_HHT",
+    type = "CDS",
+    score = NA,
+    phase = 0,
+    db_xref = NA,
+    gbkey = "CDS",
+    gene_biotype = "NA",
+    locus_tag = "M1M17_gp17_CTERM",
+    old_locus_tag = NA,
+    Name = "M1M17_gp17_CTERM",
+    Parent = "gene-M1M17_gp17_CTERM",
+    ID = "cds-M1M17_gp17_CTERM",
+    product = "P2 gpO-like scaffolding/protease protein",
+    protein_id = NA,
+    transl_table = NA,
+    exon_number = NA,
+    note = NA)
+  
+# Arrange based on mean position of each feature
+HFTV1_NCBI_PP_HHT_splitgp17_gff_df <-
+  HFTV1_NCBI_PP_HHT_splitgp17_gff_df %>%
+  group_by(locus_tag) %>%
+  dplyr::mutate(mean_start = mean(start)) %>%
+  ungroup() %>%
+  arrange(mean_start, locus_tag, type) %>%
+  select(!mean_start)
+  # dplyr::rename(
+    # feature = type) %>%
+  # mutate(gene_id = locus_tag) %>%
+  # relocate(gene_id, .after = phase)
+
+HFTV1_NCBI_PP_HHT_splitgp17_gff_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_NCBI_PP_HHT_splitgp17_gff_df, keep.extra.columns = TRUE)
+
+# === EXPORT ===
+
+export(
+  HFTV1_NCBI_PP_HHT_splitgp17_gff_gr,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+    "RNA_RBO/c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17/c_ANNOT/",
+    "HFTV1_NCBI_PP_HHT_splitgp17.gff",
+    sep = ""),
+  "gff3")
+
+write_csv(
+  HFTV1_NCBI_PP_HHT_splitgp17_gff_df,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+    "RNA_RBO/c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17/c_ANNOT/",
+    "HFTV1_NCBI_PP_HHT_splitgp17_gff.csv",
+    sep = ""))
+```
+
+# === HFTV1 | +/- HHT | REVISED ANNOTATION | gp17 | HG MERGE + EXPORT ========
+```{r}
+HFTV1_splitgp17_Hg_gff_df <-
+  rbind(
+    HFTV1_NCBI_PP_HHT_splitgp17_gff_df,
+    Hg_NCBI_gff_df)
+
+
+HFTV1_NCBI_PP_HHT_splitgp17_gff_gr <-
+  makeGRangesFromDataFrame(
+    HFTV1_splitgp17_Hg_gff_df, keep.extra.columns = TRUE)
+
+# === EXPORT ===
+
+export(
+  HFTV1_NCBI_PP_HHT_splitgp17_gff_gr,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+    "RNA_RBO/c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17/c_ANNOT/",
+    "HFTV1_gp17split_Hg.gff",
+    sep = ""),
+  "gff3")
+
+write_csv(
+  HFTV1_splitgp17_Hg_gff_df,
+  paste(
+    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+    "RNA_RBO/c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17/c_ANNOT/",
+    "HFTV1_gp17split_Hg_gff.csv",
+    sep = ""))
+```
+
+
+
