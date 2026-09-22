@@ -1,0 +1,36 @@
+﻿COG_category,COG_desc_lvl1,COG_desc_lvl1_long,COG_desc_lvl2,COG_desc_lvl2_long
+J,information_storage_and_processing,Information storage and processing,translation_ribosomal_structure_biogenesis,"J: Translation, ribosomal structure and biogenesis"
+A,information_storage_and_processing,Information storage and processing,rna_processing_and_modification,A: RNA processing and modification
+K,information_storage_and_processing,Information storage and processing,transcription,K: Transcription
+L,information_storage_and_processing,Information storage and processing,replication_recombination_repair,"L: Replication, recombination, and repair"
+B,information_storage_and_processing,Information storage and processing,chromatin_structure_dynamics,B: Chromatin structure and dynamics
+D,cellular_processes_and_signaling,Cellular processes and signaling,cell_cycle_control_cell_dicision_chromosome_partitioning,"D: Cell cycle control, cell division, chromosome partitioning"
+Y,cellular_processes_and_signaling,Cellular processes and signaling,nuclear_structure,Y: Nuclear structure
+V,cellular_processes_and_signaling,Cellular processes and signaling,defense_mechanisms,V: Defense mechanisms
+T,cellular_processes_and_signaling,Cellular processes and signaling,signal_transduction_mechanisms,T: Signal transduction mechanisms
+M,cellular_processes_and_signaling,Cellular processes and signaling,cell_wall_membrane_envelope_biogenesis,M: Cell wall/membrane/envelope biogenesis
+N,cellular_processes_and_signaling,Cellular processes and signaling,cell_motility,N: Cell motility
+Z,cellular_processes_and_signaling,Cellular processes and signaling,cytoskeleton,Z: Cytoskeleton
+W,cellular_processes_and_signaling,Cellular processes and signaling,extracellular_structures,W: Extracellular structures
+U,cellular_processes_and_signaling,Cellular processes and signaling,intracellular_trafficking_secretion_vesicular_transport,"U: Intracellular trafficking, secretion, and vesicular transport"
+O,cellular_processes_and_signaling,Cellular processes and signaling,posttranslational_modification_protein_turnover_chaperones,"O: Posttranslational modification, protein turnover, chaperones"
+C,metabolism,Metabolism,energy_production_conversion,C: Energy production and conversion
+G,metabolism,Metabolism,carbohydrate_transport_metabolism,G: Carbohydrate transport and metabolism
+E,metabolism,Metabolism,amino_acid_transport_metabolism,E: Amino acid transport and metabolism
+F,metabolism,Metabolism,nucleotide_transport_metabolism,F: Nucleotide transport and metabolism
+H,metabolism,Metabolism,coenzyme_transport_metabolism,H: Coenzyme transport and metabolism
+I,metabolism,Metabolism,lipid_transport_metabolism,I: Lipid transport and metabolism
+P,metabolism,Metabolism,inorganic_ion_transport_metabolism,P: Inorganic ion transport and metabolism
+Q,metabolism,Metabolism,secondary_metabolites_biosynthesis_transport_catabolism,"Q: Secondary metabolites biosynthesis, transport and catabolism"
+R,poorly_characterized,Poorly characterized,general_function_prediction_only,R: General function prediction only
+S,poorly_characterized,Poorly characterized,function_unknown,S: Function unknown
+X,integrated_viral_elements,integrated_viral_elements,integrated_viral_elements,X: Phage and prophage elements
+-,no_hits,No hits,no_hits,No hits
+XE,viral,Viral,viral_amino_acid_transport_and_metabolism,XE: Amino acid transport and metabolism
+XJ,viral,Viral,viral_translation,XJ: Translation
+XK,viral,Viral,viral_transcription,XK: Transcription
+XL,viral,Viral,viral_replication_recombination_repair,"XL: Replication, recombination, and repair"
+XtRNA,viral,Viral,viral_tRNA,XtRNA: tRNA
+XV,viral,Viral,viral_dna_restriction,XV: Defense mechanisms
+XX,viral,Viral,viral_structure_packing_assembly,"XX: Virion structure, packing, and assembly"
+X-,viral,Viral,viral_no_hits,X-: No hits
