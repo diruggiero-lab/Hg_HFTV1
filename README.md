@@ -6,10 +6,16 @@
 
 - **HG_INF_RNA_RBO_DE_TE.Rmd** - Documentation for differential expression analysis and translation efficiency analysis of RNA-seq and Ribo-seq data.
 
-## ANNOTATIONS
+## ANNOTATIONS AND REFERENCE FILES
 
 - **HFTV1_NCBI_PP_consensus.gff** - HFTV1 annotation containing features derived from NCBI annotations and Pharokka/Phold (PP), as well as revised descriptions for structural genes based on Zhang et al. (2025) cryo-EM of HFTV1 virions.
 
 - **HFTV1_Hg.gff** and **HFTV1_Hg_gff.csv** - Merged HFTV1-*Hg* annotations, with revisions of HFTV1 ORFs based on translation start site mapping using Ribo-seq +/- harringtonine. HFTV1 annotation with Pharokka/Phold features (see above) was used as input in the construction of this file. CSV format included for convenient browsing outside of formal analysis.
 
+- **cog_code_viral_mods.csv** - COG code used for functional analysis of differentially expressed genes. Based on COGs and arCOGs. Since standard categories could not be assigned to most HFTV1 genes, custom categories were added with unique identifiers. Correlation between these custom categories and viral genes can be found in output of DE analyses (e.g., see **RBO_master.csv**).
 
+## RESULTS FILES
+
+Note: other results files are available in the supplemental tables of the publication that accompanies this work.
+
+- **RBO_master.csv** - Master spreadsheet of genes with differential ribosome occupancy based on Ribo-seq. Fields include cluster family assignment, cluster assignment, functional annotations, and various expression values. 
