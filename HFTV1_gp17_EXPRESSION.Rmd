@@ -5,12 +5,20 @@ date: "2026-07-22"
 output: html_document
 ---
 
-# === REMOVE OBJECTS (*) =====================================================
-```{r}
-rm(list = ls())
-```
+Description: This .Rmd file was used to calculate expression of the two
+regions of gp17 (5' or 3') based on RNA-seq and Ribo-seq and to calculate
+translation efficiency (TE) of each region. These analyses were all founded
+on featureCounts data, which will be made available on GEO upon publication
+of the accompanying manuscript. TE analysis of gp17 regions is based partially
+on TE analysis of all genes (i.e., some parts of that code were literally
+copy-pasted to this file with slight adjustments, including the use of an
+annotation file in which gp17 was split into 5' and 3' regions), so some 
+elements in the TE analysis here are not required. Visualizations of gp17 
+RNA-seq and Ribo-seq expression are shown in the main figures of the manuscript
+(Fig. 3 at thetime of writing). Visualization of gp17 is shown in the
+supplements of the manuscript (Fig. S16 at the time of writing). 
 
-# === PACKAGES (*) ===========================================================
+# === PACKAGES ===============================================================
 ```{r}
 library(rtracklayer)
 library(tidyverse)
@@ -25,53 +33,14 @@ library(dplyr)
 library(plyranges) # For reading bigwigs
 ```
 
-# === HFTV1 | gp17 | FC FUN ==================================================
-```{r}
-fc_fn <- function(sample) {
-  
-  dataframe <- 
-    # Read in featurecounts data
-    read_tsv(
-      paste(
-        "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
-        "RNA_RBO/c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17_two_TSSs/",
-        "d_FEATURECOUNTS/",
-        sample, "_fc.txt", sep=""),
-          # Skip first line (record of featurecounts command)
-          skip=1, 
-          # Do not show column type
-          show_col_types = FALSE) %>%
-    # Rename columns 
-    dplyr::rename(
-      # Column 1: gene ID
-      gene_id = 1,
-      # Column 7: sample-specific feature counts
-      counts = 7) %>%
-    # Select only the gene_id and read counts columns for further use. 
-    # dplyr::select(c(1,7)) %>% 
-    # Round read count values to nearest integer (for featurecount data
-    # generated using --fraction option for reads that map to overlapping
-    # features. 
-    dplyr::mutate(across(where(is.numeric), round, 0)) %>%
-    # Subset to unique entries
-    unique()
-  
-  return(dataframe)
-  
-}
-
-# Recall that BR2 RNA 180 and 060 were swapped
-BR2_RNA_180_E_fc_splitgp17_df <- fc_fn("BR2_RNA_060_E")
-BR3_RNA_180_E_fc_splitgp17_df <- fc_fn("BR3_RNA_180_E")
-BR4_RNA_180_E_fc_splitgp17_df <- fc_fn("BR4_RNA_180_E")
-
-BR2_RBO_180_E_R1_fc_splitgp17_df <- fc_fn("BR2_RBO_180_E_R1")
-BR3_RBO_180_E_R1_fc_splitgp17_df <- fc_fn("BR3_RBO_180_E_R1")
-BR4_RBO_180_E_R1_fc_splitgp17_df <- fc_fn("BR4_RBO_180_E_R1")
-```
-
 # === HFTV1 | gp17 | RNA EXPRESSION QUANTIFY =================================
 ```{r}
+BR1_RNA_180_E_bpm_gr <-
+  read_bigwig(
+    paste(
+      "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+      "RNA_RBO/c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17_two_TSSs/e_COVERAGE/",
+      "BR1_RNA_180_E_bpm.bw", sep = ""))
 BR2_RNA_180_E_bpm_gr <-
   read_bigwig(
     paste(
@@ -84,18 +53,28 @@ BR3_RNA_180_E_bpm_gr <-
       "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
       "RNA_RBO/c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17_two_TSSs/e_COVERAGE/",
       "BR3_RNA_180_E_bpm.bw", sep = ""))
-BR4_RNA_180_E_bpm_gr <-
-  read_bigwig(
-    paste(
-      "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
-      "RNA_RBO/c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17_two_TSSs/e_COVERAGE/",
-      "BR4_RNA_180_E_bpm.bw", sep = ""))
 
+BR1_RNA_180_E_bpm_df <- as.data.frame(BR1_RNA_180_E_bpm_gr)
 BR2_RNA_180_E_bpm_df <- as.data.frame(BR2_RNA_180_E_bpm_gr)
 BR3_RNA_180_E_bpm_df <- as.data.frame(BR3_RNA_180_E_bpm_gr)
-BR4_RNA_180_E_bpm_df <- as.data.frame(BR4_RNA_180_E_bpm_gr)
 
 
+BR1_RNA_180_E_bpm_gp17_df <-
+  BR1_RNA_180_E_bpm_df %>%
+  filter(seqnames == "NC_062739.1") %>%
+  filter(start > 7105) %>%
+  filter(start < 8549) %>%
+  mutate(
+    region = case_when(
+      start < 7982 ~ "N_TERM", 
+      start > 7981 ~ "C_TERM", 
+      TRUE ~ "NA")) %>%
+  group_by(region) %>%
+  dplyr::summarize(region_cumulative_bpms = sum(score)) %>%
+  ungroup() %>%
+  mutate(
+    BR = "BR1",
+    sample_type = "RNA-Seq")
 BR2_RNA_180_E_bpm_gp17_df <-
   BR2_RNA_180_E_bpm_df %>%
   filter(seqnames == "NC_062739.1") %>%
@@ -128,22 +107,6 @@ BR3_RNA_180_E_bpm_gp17_df <-
   mutate(
     BR = "BR3",
     sample_type = "RNA-Seq")
-BR4_RNA_180_E_bpm_gp17_df <-
-  BR4_RNA_180_E_bpm_df %>%
-  filter(seqnames == "NC_062739.1") %>%
-  filter(start > 7105) %>%
-  filter(start < 8549) %>%
-  mutate(
-    region = case_when(
-      start < 7982 ~ "N_TERM", 
-      start > 7981 ~ "C_TERM", 
-      TRUE ~ "NA")) %>%
-  group_by(region) %>%
-  dplyr::summarize(region_cumulative_bpms = sum(score)) %>%
-  ungroup() %>%
-  mutate(
-    BR = "BR4",
-    sample_type = "RNA-Seq")
 
 
 
@@ -151,6 +114,12 @@ BR4_RNA_180_E_bpm_gp17_df <-
 
 # === HFTV1 | gp17 | RBO EXPRESSION QUANTIFY =================================
 ```{r}
+BR1_RBO_180_E_R1_bpm_gr <-
+  read_bigwig(
+    paste(
+      "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
+      "RNA_RBO/c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17_two_TSSs/e_COVERAGE/",
+      "BR1_RBO_180_E_R1_bpm.bw", sep = ""))
 BR2_RBO_180_E_R1_bpm_gr <-
   read_bigwig(
     paste(
@@ -163,17 +132,27 @@ BR3_RBO_180_E_R1_bpm_gr <-
       "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
       "RNA_RBO/c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17_two_TSSs/e_COVERAGE/",
       "BR3_RBO_180_E_R1_bpm.bw", sep = ""))
-BR4_RBO_180_E_R1_bpm_gr <-
-  read_bigwig(
-    paste(
-      "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/",
-      "RNA_RBO/c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17_two_TSSs/e_COVERAGE/",
-      "BR4_RBO_180_E_R1_bpm.bw", sep = ""))
 
+BR1_RBO_180_E_R1_bpm_df <- as.data.frame(BR1_RBO_180_E_R1_bpm_gr)
 BR2_RBO_180_E_R1_bpm_df <- as.data.frame(BR2_RBO_180_E_R1_bpm_gr)
 BR3_RBO_180_E_R1_bpm_df <- as.data.frame(BR3_RBO_180_E_R1_bpm_gr)
-BR4_RBO_180_E_R1_bpm_df <- as.data.frame(BR4_RBO_180_E_R1_bpm_gr)
 
+BR1_RBO_180_E_R1_bpm_gp17_df <-
+  BR1_RBO_180_E_R1_bpm_df %>%
+  filter(seqnames == "NC_062739.1") %>%
+  filter(start > 7105) %>%
+  filter(start < 8549) %>%
+  mutate(
+    region = case_when(
+      start < 7982 ~ "N_TERM", 
+      start > 7981 ~ "C_TERM", 
+      TRUE ~ "NA")) %>%
+  group_by(region) %>%
+  dplyr::summarize(region_cumulative_bpms = sum(score)) %>%
+  ungroup() %>%
+  mutate(
+    BR = "BR1",
+    sample_type = "Ribo-Seq")
 BR2_RBO_180_E_R1_bpm_gp17_df <-
   BR2_RBO_180_E_R1_bpm_df %>%
   filter(seqnames == "NC_062739.1") %>%
@@ -206,22 +185,6 @@ BR3_RBO_180_E_R1_bpm_gp17_df <-
   mutate(
     BR = "BR3",
     sample_type = "Ribo-Seq")
-BR4_RBO_180_E_R1_bpm_gp17_df <-
-  BR4_RBO_180_E_R1_bpm_df %>%
-  filter(seqnames == "NC_062739.1") %>%
-  filter(start > 7105) %>%
-  filter(start < 8549) %>%
-  mutate(
-    region = case_when(
-      start < 7982 ~ "N_TERM", 
-      start > 7981 ~ "C_TERM", 
-      TRUE ~ "NA")) %>%
-  group_by(region) %>%
-  dplyr::summarize(region_cumulative_bpms = sum(score)) %>%
-  ungroup() %>%
-  mutate(
-    BR = "BR4",
-    sample_type = "Ribo-Seq")
 
 
 ```
@@ -231,12 +194,12 @@ BR4_RBO_180_E_R1_bpm_gp17_df <-
 
 gp17_180_bpms_df <-
   rbind(
+    BR1_RNA_180_E_bpm_gp17_df,
     BR2_RNA_180_E_bpm_gp17_df,
     BR3_RNA_180_E_bpm_gp17_df,
-    BR4_RNA_180_E_bpm_gp17_df,
+    BR1_RBO_180_E_R1_bpm_gp17_df,
     BR2_RBO_180_E_R1_bpm_gp17_df,
-    BR3_RBO_180_E_R1_bpm_gp17_df,
-    BR4_RBO_180_E_R1_bpm_gp17_df)
+    BR3_RBO_180_E_R1_bpm_gp17_df)
 
 gp17_180_bpms_df$sample_type <- 
   factor(
@@ -280,7 +243,7 @@ gp17_180_bpms_plot <-
     data = 
       gp17_180_bpms_df %>% 
       filter(sample_type == "RNA-Seq") %>%
-      filter(BR == "BR2"),
+      filter(BR == "BR1"),
     position = position_dodge(width = 0.9), 
     shape = 18, 
     size=3, 
@@ -290,7 +253,7 @@ gp17_180_bpms_plot <-
     data = 
       gp17_180_bpms_df %>% 
       filter(sample_type == "RNA-Seq") %>%
-      filter(BR == "BR3"),
+      filter(BR == "BR2"),
     position = position_dodge(width = 0.9), 
     shape = 19, 
     size=1, 
@@ -300,7 +263,7 @@ gp17_180_bpms_plot <-
     data = 
       gp17_180_bpms_df %>% 
       filter(sample_type == "RNA-Seq") %>%
-      filter(BR == "BR4"),
+      filter(BR == "BR3"),
     position = position_dodge(width = 0.9), 
     shape = 15, 
     size=2, 
@@ -400,7 +363,7 @@ gp17_180_bpms_plot <-
     data = 
       gp17_180_bpms_df %>% 
       filter(sample_type == "Ribo-Seq") %>%
-      filter(BR == "BR2"),
+      filter(BR == "BR1"),
     position = position_dodge(width = 0.9), 
     shape = 18, 
     size=3, 
@@ -410,7 +373,7 @@ gp17_180_bpms_plot <-
     data = 
       gp17_180_bpms_df %>% 
       filter(sample_type == "Ribo-Seq") %>%
-      filter(BR == "BR3"),
+      filter(BR == "BR2"),
     position = position_dodge(width = 0.9), 
     shape = 19, 
     size=1, 
@@ -420,7 +383,7 @@ gp17_180_bpms_plot <-
     data = 
       gp17_180_bpms_df %>% 
       filter(sample_type == "Ribo-Seq") %>%
-      filter(BR == "BR4"),
+      filter(BR == "BR3"),
     position = position_dodge(width = 0.9), 
     shape = 15, 
     size=2, 
@@ -492,147 +455,6 @@ ggsave(
   plot = gp17_180_bpms_plot,
   width = 10,
   height = 8,
-  units = "cm", 
-  dpi = 300)
-```
-
-# ratio wrangle
-```{r}
-
-gp17_180_CTERM_bpms_df <-
-  gp17_180_bpms_df %>%
-  filter(region == "C_TERM") %>%
-  dplyr::rename(C_TERM_cum_bpms = region_cumulative_bpms)
-
-gp17_180_NTERM_bpms_df <-
-  gp17_180_bpms_df %>%
-  filter(region == "N_TERM") %>%
-  dplyr::rename(N_TERM_cum_bpms = region_cumulative_bpms)
-
-gp17_180_ratio_df <-
-  left_join(
-    gp17_180_NTERM_bpms_df %>%
-      select(!region),
-    gp17_180_CTERM_bpms_df %>%
-      select(!region),
-    by = c("BR", "sample_type")) %>%
-  relocate(N_TERM_cum_bpms, .before = C_TERM_cum_bpms) %>%
-  mutate(ratio = C_TERM_cum_bpms/N_TERM_cum_bpms)
-
-```
-
-# ratio vis
-```{r}
-my_plot <-
-  
-  ggplot(
-    gp17_180_ratio_df,
-    aes(
-      x = sample_type,
-      y = ratio),
-    group = sample_type) +
-  
-  geom_bar(
-    stat = "summary",
-    fun = "mean",
-    position = "dodge",
-    color="black", 
-    size=0.75,
-    width=0.9,
-    fill = "grey90") +
-
-  geom_point(
-    data = gp17_180_ratio_df %>%
-      filter(BR == "BR2"),
-    aes(
-      y = ratio,
-      group = sample_type),
-    position = position_dodge(width = 0.9), shape = 1, size=1, stroke = 1.25) +
-  geom_point(
-    data = gp17_180_ratio_df %>%
-      filter(BR == "BR3"),
-    aes(
-      y = ratio,
-      group = sample_type),
-    position = position_dodge(width = 0.9), shape = 1, size=1, stroke = 1.25) +
-  geom_point(
-    data = gp17_180_ratio_df %>%
-      filter(BR == "BR4"),
-    aes(
-      y = ratio,
-      group = sample_type),
-    position = position_dodge(width = 0.9), shape = 1, size=1, stroke = 1.25) +
-
-  stat_summary(
-    fun.data = mean_sdl,
-    geom = "errorbar",
-    width=0.2,
-    position = position_dodge(width=0.9), fun.args = list(mult = 1)) +
-  
-  ylim(0, 10) +
-  
-  ylab("C-term.:N-term. cumulative RPMs") +
-
-  theme_classic() +
-  theme(
-    plot.title=element_text(size=18, face="bold", hjust = 0.5),
-
-    axis.title = element_text(size = 16, face="bold"),
-    axis.title.x = element_text(margin=margin(t=10)),
-    axis.title.y = element_text(margin=margin(r=10)),
-
-    axis.text = element_text(size = 14, face="bold", color="black"),
-
-    axis.ticks = element_line(linewidth = 0.75, color = "black"),
-    axis.ticks.length=unit(0.25, "cm"),
-
-    axis.line=element_line(linewidth = 0, color = "black"),
-
-    legend.text = element_text(face="bold", size=12),
-    # No legend
-    # legend.position="none",
-
-    panel.background = element_rect(fill = "white"),
-    panel.border =
-      element_rect(colour = "black", fill=NA, linewidth=1.75),
-    panel.spacing = unit(3, "lines"),
-
-    strip.text.x =
-      element_text(margin = margin(2, 0, 2, 0), size = 14, face="bold"),
-    strip.background = element_blank(),
-    axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
-    panel.grid.major.y = element_line(color = "grey80"),
-    # panel.grid.major.x = element_line(color = "grey80"),
-    panel.grid.minor.y = element_line(color = "grey80")) +
-    # panel.grid.minor.x = element_line(color = "grey80"))
-  
-  facet_wrap(
-    ~ sample_type,
-    scales = "free"
-  )
-
-
-ggsave(
-  paste(
-    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/RNA_RBO/",
-    "c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17_two_TSSs/e_COVERAGE/",
-    "CTERM_NTERM_ratio.png",
-    sep = ""),
-  plot = my_plot,
-  width = 12,
-  height = 12,
-  units = "cm", 
-  dpi = 300)
-
-ggsave(
-  paste(
-    "/Users/mi/DIRUGGIERO_LAB/PROJECTS_AND_RESULTS/H_GIBBONSII_HFTV1/RNA_RBO/",
-    "c_ANA/b_REANNOTATION/MNL/i_GOIS/gp17_two_TSSs/e_COVERAGE/",
-    "CTERM_NTERM_ratio.svg",
-    sep = ""),
-  plot = my_plot,
-  width = 12,
-  height = 12,
   units = "cm", 
   dpi = 300)
 ```
@@ -970,7 +792,7 @@ Hg_HFTV1_metafeat_annot_df <-
 
 ```
 
-# === COG FACTOR CONVERSION FUN (*) ==========================================
+# === COG FACTOR CONVERSION FUN ==============================================
 ```{r}
 COG_factor_conversion_fun <-
   function(
@@ -1021,7 +843,7 @@ COG_factor_conversion_fun <-
 
 ```
 
-# === DEA | ISO | INPUTS =====================================================
+# === TE | INPUTS ============================================================
 ```{r}
 # Prepare data and metadata for DE analysis
 # Some code is derived from SRC
@@ -1059,15 +881,20 @@ RNA_fc_fn <- function(rep, sample) {
   
 }
 
-# BR2 (NOTE: account for sample swap, 180E <-> 060E)
+BR1_RNA_000_E_fc_df <- RNA_fc_fn("BR1", "BR1_RNA_000_E")
+BR1_RNA_005_E_fc_df <- RNA_fc_fn("BR1", "BR1_RNA_005_E")
+BR1_RNA_015_E_fc_df <- RNA_fc_fn("BR1", "BR1_RNA_015_E")
+BR1_RNA_030_E_fc_df <- RNA_fc_fn("BR1", "BR1_RNA_030_E")
+BR1_RNA_060_E_fc_df <- RNA_fc_fn("BR1", "BR1_RNA_060_E")
+BR1_RNA_180_E_fc_df <- RNA_fc_fn("BR1", "BR1_RNA_180_E")
+
+# BR2
 BR2_RNA_000_E_fc_df <- RNA_fc_fn("BR2", "BR2_RNA_000_E")
 BR2_RNA_005_E_fc_df <- RNA_fc_fn("BR2", "BR2_RNA_005_E")
 BR2_RNA_015_E_fc_df <- RNA_fc_fn("BR2", "BR2_RNA_015_E")
 BR2_RNA_030_E_fc_df <- RNA_fc_fn("BR2", "BR2_RNA_030_E")
-BR2_RNA_060_E_fc_df <- RNA_fc_fn("BR2", "BR2_RNA_180_E") %>%
-  dplyr::rename(BR2_RNA_060_E = BR2_RNA_180_E)
-BR2_RNA_180_E_fc_df <- RNA_fc_fn("BR2", "BR2_RNA_060_E") %>%
-  dplyr::rename(BR2_RNA_180_E = BR2_RNA_060_E)
+BR2_RNA_060_E_fc_df <- RNA_fc_fn("BR2", "BR2_RNA_060_E")
+BR2_RNA_180_E_fc_df <- RNA_fc_fn("BR2", "BR2_RNA_180_E")
 
 # BR3
 BR3_RNA_000_E_fc_df <- RNA_fc_fn("BR3", "BR3_RNA_000_E")
@@ -1077,18 +904,17 @@ BR3_RNA_030_E_fc_df <- RNA_fc_fn("BR3", "BR3_RNA_030_E")
 BR3_RNA_060_E_fc_df <- RNA_fc_fn("BR3", "BR3_RNA_060_E")
 BR3_RNA_180_E_fc_df <- RNA_fc_fn("BR3", "BR3_RNA_180_E")
 
-# BR4
-BR4_RNA_000_E_fc_df <- RNA_fc_fn("BR4", "BR4_RNA_000_E")
-BR4_RNA_005_E_fc_df <- RNA_fc_fn("BR4", "BR4_RNA_005_E")
-BR4_RNA_015_E_fc_df <- RNA_fc_fn("BR4", "BR4_RNA_015_E")
-BR4_RNA_030_E_fc_df <- RNA_fc_fn("BR4", "BR4_RNA_030_E")
-BR4_RNA_060_E_fc_df <- RNA_fc_fn("BR4", "BR4_RNA_060_E")
-BR4_RNA_180_E_fc_df <- RNA_fc_fn("BR4", "BR4_RNA_180_E")
-
 # Extract read counts, combine, and reformat
 RNA_fc_df <- 
+  # BR1
+  BR1_RNA_000_E_fc_df %>%
+  full_join(BR1_RNA_005_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RNA_015_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RNA_030_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RNA_060_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RNA_180_E_fc_df, by = "gene_id") %>%
   # BR2
-  BR2_RNA_000_E_fc_df %>%
+  full_join(BR2_RNA_000_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RNA_005_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RNA_015_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RNA_030_E_fc_df, by = "gene_id") %>%
@@ -1101,13 +927,6 @@ RNA_fc_df <-
   full_join(BR3_RNA_030_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RNA_060_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RNA_180_E_fc_df, by = "gene_id") %>%
-  # BR4
-  full_join(BR4_RNA_000_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RNA_005_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RNA_015_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RNA_030_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RNA_060_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RNA_180_E_fc_df, by = "gene_id") %>%
   column_to_rownames("gene_id")
 
 # Subset featurecounts data to non-p3 genes
@@ -1120,7 +939,7 @@ RNA_fc_p3_df <-
   RNA_fc_df %>%
   filter(rownames(RNA_fc_df) %in% Hg_annot_p3_df$gene_id) %>%
   # Remove biological replicate that was missing p3.
-  select(!contains("BR2"))
+  select(!contains("BR1"))
 
 
 # Create non-p3 metadata
@@ -1139,10 +958,10 @@ RNA_Np3_meta_df <-
     
     # Biological replicate
     biorep = 
-      factor(c("BR2", "BR2", "BR2", "BR2", "BR2", "BR2", 
-               "BR3", "BR3", "BR3", "BR3", "BR3", "BR3",
-               "BR4", "BR4", "BR4", "BR4", "BR4", "BR4"),
-             levels = c("BR2", "BR3", "BR4")),
+      factor(c("BR1", "BR1", "BR1", "BR1", "BR1", "BR1", 
+               "BR2", "BR2", "BR2", "BR2", "BR2", "BR2",
+               "BR3", "BR3", "BR3", "BR3", "BR3", "BR3"),
+             levels = c("BR1", "BR2", "BR3")),
     
     # Batch (effectively the same as biorep)
     batch = 
@@ -1177,9 +996,9 @@ RNA_p3_meta_df <-
     
     # Biological replicate
     biorep = 
-      factor(c("BR3", "BR3", "BR3", "BR3", "BR3", "BR3",
-               "BR4", "BR4", "BR4", "BR4", "BR4", "BR4"),
-             levels = c("BR2", "BR3", "BR4")),
+      factor(c("BR2", "BR2", "BR2", "BR2", "BR2", "BR2",
+               "BR3", "BR3", "BR3", "BR3", "BR3", "BR3"),
+             levels = c("BR1", "BR2", "BR3")),
     
     # Batch (effectively the same as biorep)
     batch = 
@@ -1229,57 +1048,50 @@ RBO_fc_fn <- function(rep, sample) {
   
 }
 
-# BR2 (account for 015 <-> 060)
+# BR1
+BR1_RBO_000_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_000_E_R1")
+BR1_RBO_005_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_005_E_R1")
+BR1_RBO_015_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_015_E_R1")
+BR1_RBO_060_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_060_E_R1")
+BR1_RBO_180_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_180_E_R1")
+
+# BR2
 BR2_RBO_000_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_000_E_R1")
 BR2_RBO_005_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_005_E_R1")
-BR2_RBO_015_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_060_E_R1") %>%
-  dplyr::rename(BR2_RBO_015_E_R1 = BR2_RBO_060_E_R1)
-BR2_RBO_060_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_015_E_R1") %>%
-  dplyr::rename(BR2_RBO_060_E_R1 = BR2_RBO_015_E_R1)
+BR2_RBO_015_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_015_E_R1")
+BR2_RBO_030_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_030_E_R1")
 BR2_RBO_180_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_180_E_R1")
 
-# BR3 (account for swaps among 005, 030, and 015)
+# BR3
 BR3_RBO_000_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_000_E_R1")
-BR3_RBO_005_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_030_E_R1") %>%
-  dplyr::rename(BR3_RBO_005_E_R1 = BR3_RBO_030_E_R1)
-BR3_RBO_015_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_005_E_R1") %>%
-  dplyr::rename(BR3_RBO_015_E_R1 = BR3_RBO_005_E_R1)
-BR3_RBO_030_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_015_E_R1") %>%
-  dplyr::rename(BR3_RBO_030_E_R1 = BR3_RBO_015_E_R1)
+BR3_RBO_005_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_005_E_R1")
+BR3_RBO_015_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_015_E_R1")
+BR3_RBO_030_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_030_E_R1")
+BR3_RBO_060_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_060_E_R1")
 BR3_RBO_180_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_180_E_R1")
-
-# BR4 (account for swaps among 060 <-> 030)
-BR4_RBO_000_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_000_E_R1")
-BR4_RBO_005_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_005_E_R1")
-BR4_RBO_015_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_015_E_R1")
-BR4_RBO_030_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_060_E_R1") %>%
-  dplyr::rename(BR4_RBO_030_E_R1 = BR4_RBO_060_E_R1)
-BR4_RBO_060_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_030_E_R1") %>%
-  dplyr::rename(BR4_RBO_060_E_R1 = BR4_RBO_030_E_R1)
-BR4_RBO_180_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_180_E_R1")
 
 
 # Extract read counts, combine, and reformat
 RBO_fc_df <-
+  # BR1
+  BR1_RBO_000_E_fc_df %>%
+  full_join(BR1_RBO_005_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RBO_015_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RBO_060_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RBO_180_E_fc_df, by = "gene_id") %>%
   # BR2
-  BR2_RBO_000_E_fc_df %>%
+  full_join(BR2_RBO_000_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RBO_005_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RBO_015_E_fc_df, by = "gene_id") %>%
-  full_join(BR2_RBO_060_E_fc_df, by = "gene_id") %>%
+  full_join(BR2_RBO_030_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RBO_180_E_fc_df, by = "gene_id") %>%
   # BR3
   full_join(BR3_RBO_000_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RBO_005_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RBO_015_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RBO_030_E_fc_df, by = "gene_id") %>%
+  full_join(BR3_RBO_060_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RBO_180_E_fc_df, by = "gene_id") %>%
-  # BR4
-  full_join(BR4_RBO_000_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_005_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_015_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_030_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_060_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_180_E_fc_df, by = "gene_id") %>%
 
   column_to_rownames("gene_id")
 
@@ -1295,11 +1107,11 @@ RBO_Np3_meta_df <-
     # Time
     time = 
       factor(c(
-        # BR2
+        # BR1
         "000_PI", "005_PI", "015_PI", "060_PI", "180_PI",
-        # BR3
+        # BR2
         "000_PI", "005_PI", "015_PI", "030_PI", "180_PI",
-        # BR4
+        # BR3
         "000_PI", "005_PI", "015_PI", "030_PI", "060_PI", "180_PI"),
         
         # Define time points as distinct levels of time factor
@@ -1309,10 +1121,10 @@ RBO_Np3_meta_df <-
     
     # Biological replicate
     biorep = 
-      factor(c("BR2", "BR2", "BR2", "BR2", "BR2", 
-               "BR3", "BR3", "BR3", "BR3", "BR3",
-               "BR4", "BR4", "BR4", "BR4", "BR4", "BR4"),
-             levels = c("BR2", "BR3", "BR4")),
+      factor(c("BR1", "BR1", "BR1", "BR1", "BR1", 
+               "BR2", "BR2", "BR2", "BR2", "BR2",
+               "BR3", "BR3", "BR3", "BR3", "BR3", "BR3"),
+             levels = c("BR1", "BR2", "BR3")),
     
     # Batch (effectively the same as biological replicate)
     batch = 
@@ -1332,7 +1144,7 @@ RBO_Np3_meta_df <-
 
 ```
 
-# === DEA | ISO | DDS ========================================================
+# === TE | DDS ===============================================================
 ```{r}
 dds_generate_filter_fn <- function(count_data, col_data) {
   
@@ -1340,10 +1152,7 @@ dds_generate_filter_fn <- function(count_data, col_data) {
   dds <- DESeqDataSetFromMatrix(
     countData = count_data,
     colData = col_data,
-    design = ~ time)
-  # batch cannot be incorporated into experimental design when 200 min 
-  # PI samples are included. 
-    # design = ~ batch + time)
+    design = ~ batch + time)
   
   # Define values for pre-filtering. 
   
@@ -1381,7 +1190,7 @@ RBO_Np3_dds_vals <- assay(RBO_Np3_dds)
 
 ```
 
-# === TEA | SFN ==============================================================
+# === TE | SFN ===============================================================
 ```{r}
 # === RNA ===
 
@@ -1407,7 +1216,7 @@ RBO_Np3_sfn_df <- as.data.frame(assay(RBO_Np3_sfn)) %>%
 #   rownames_to_column("gene_id")
 ```
 
-# === TEA | ISO | TRANSFORM ==================================================
+# === TE | RLD ===============================================================
 ```{r}
 # === RNA ===
 
@@ -1435,7 +1244,7 @@ RBO_Np3_rld_df <- as.data.frame(assay(RBO_Np3_rld)) %>%
 
 ```
 
-# === TEA | ISO | TRANSFORM | SUMMARY STATISTICS | FUN =======================
+# === TE | SUMMARY STATISTICS | FUN ==========================================
 ```{r}
 transf_summary_fn <- 
   function(transf_df) {
@@ -1471,9 +1280,9 @@ transf_summary_fn <-
       
       col_names <- c("gene_id", 0, 5, 15, 30, 60, 180)
       
+      BR1_col_names <- col_names
       BR2_col_names <- col_names
       BR3_col_names <- col_names
-      BR4_col_names <- col_names
       
     } else if (sample_type == "RBO") {
       
@@ -1482,20 +1291,20 @@ transf_summary_fn <-
         
         # Redefine column names to rename subset columns for graphing later
         # (no 60 min sample in RBO data; there was only one replicate after
-        # BR2 was removed, so I took it out entirely).
+        # BR1 was removed, so I took it out entirely).
         
         col_names <- c("gene_id", 0, 5, 15, 30, 180)
         
+        BR2_col_names <- c("gene_id", 0, 5, 15, 30, 180)
         BR3_col_names <- c("gene_id", 0, 5, 15, 30, 180)
-        BR4_col_names <- c("gene_id", 0, 5, 15, 30, 180)
         
       } else if (genetic_elements == "Np3") {
         
         col_names <- c("gene_id", 0, 5, 15, 30, 60, 180)
         
-        BR2_col_names <- c("gene_id", 0, 5, 15, 60, 180)
-        BR3_col_names <- c("gene_id", 0, 5, 15, 30, 180)
-        BR4_col_names <- c("gene_id", 0, 5, 15, 30, 60, 180)
+        BR1_col_names <- c("gene_id", 0, 5, 15, 60, 180)
+        BR2_col_names <- c("gene_id", 0, 5, 15, 30, 180)
+        BR3_col_names <- c("gene_id", 0, 5, 15, 30, 60, 180)
       }
     }
     
@@ -1504,21 +1313,21 @@ transf_summary_fn <-
 
     # These or mean values can be used for DP-GP-Cluster.
 
-    BR2_transf_df <- transf_df %>% select(contains("BR2")) %>%
+    BR1_transf_df <- transf_df %>% select(contains("BR1")) %>%
       rownames_to_column("gene_id")
-    # Only try to rename BR2 column names for non-p3 genetic elements. BR2
+    # Only try to rename BR1 column names for non-p3 genetic elements. BR1
     # data for p3 do not exist.
     if (genetic_elements == "Np3") {
-      colnames(BR2_transf_df) <- BR2_col_names
+      colnames(BR1_transf_df) <- BR1_col_names
     }
+    
+    BR2_transf_df <- transf_df %>% select(contains("BR2")) %>%
+      rownames_to_column("gene_id")
+    colnames(BR2_transf_df) <- BR2_col_names
     
     BR3_transf_df <- transf_df %>% select(contains("BR3")) %>%
       rownames_to_column("gene_id")
     colnames(BR3_transf_df) <- BR3_col_names
-    
-    BR4_transf_df <- transf_df %>% select(contains("BR4")) %>%
-      rownames_to_column("gene_id")
-    colnames(BR4_transf_df) <- BR4_col_names
     
 
 
@@ -1649,6 +1458,11 @@ transf_summary_fn <-
     # 
     # # Individual biological replicates
     # write_csv(
+    #   BR1_transf_df,
+    #   paste("../c_ANA/c_DE_ANALYSIS/a_ISO/c_RLD/a_DATA/",
+    #         genetic_elements, "/", sample_type, "_BR1_", genetic_elements, "_",
+    #         transf_type, ".csv", sep = ""))
+    # write_csv(
     #   BR2_transf_df,
     #   paste("../c_ANA/c_DE_ANALYSIS/a_ISO/c_RLD/a_DATA/",
     #         genetic_elements, "/", sample_type, "_BR2_", genetic_elements, "_",
@@ -1657,11 +1471,6 @@ transf_summary_fn <-
     #   BR3_transf_df,
     #   paste("../c_ANA/c_DE_ANALYSIS/a_ISO/c_RLD/a_DATA/",
     #         genetic_elements, "/", sample_type, "_BR3_", genetic_elements, "_",
-    #         transf_type, ".csv", sep = ""))
-    # write_csv(
-    #   BR4_transf_df,
-    #   paste("../c_ANA/c_DE_ANALYSIS/a_ISO/c_RLD/a_DATA/",
-    #         genetic_elements, "/", sample_type, "_BR4_", genetic_elements, "_",
     #         transf_type, ".csv", sep = ""))
     # 
     # if (sample_type == "RBO") {
@@ -1718,7 +1527,7 @@ transf_summary_fn <-
 
 ```
 
-# === TEA | ISO | TRANSFORM | SUMMARY STATISTICS =============================
+# === TE | RLD | SUMMARY STATISTICS ==========================================
 ```{r}
 
 # ===========
@@ -1794,7 +1603,7 @@ RBO_Np3_rld_means_scl_df <- RBO_Np3_rld_summary$transf_means_scaled_df
 
 ```
 
-# === TEA | SFN | SUMMARY STATISTICS =========================================
+# === TE | SFN | SUMMARY STATISTICS ==========================================
 ```{r}
 # ===========
 # === RNA ===
@@ -1878,7 +1687,7 @@ RBO_Np3_sfn_means_scl_df <- RBO_Np3_sfn_summary$transf_means_scaled_df
 #   plyr::rbind.fill(RBO_Np3_sfn_means_scl_df, RBO_p3_sfn_means_scl_df)
 ```
 
-# === TEA | SFN | WRANGLE ====================================================
+# === TE | SFN | SUMMARY STATISTICS | WRANGLE ================================
 ```{r}
 
 # RNA
@@ -1971,7 +1780,7 @@ RnR_Np3_sfn_means_longer_df$category <-
     ))
 ```
 
-# === TEA | TE CALC ==========================================================
+# === TE | TE CALC ===========================================================
 ```{r}
 # RNA
 RNA_AGE_sfn_means_long_df <-
@@ -2015,7 +1824,7 @@ TE_df$time_PI <-
   as.numeric(TE_df$time_PI)
 ```
 
-# === TEA | TE CALC | EXPORT =================================================
+# === TE | TE CALC | EXPORT ==================================================
 ```{r}
 # write_csv(
 #   TE_df %>% filter(grepl("gp17", gene_id)),
@@ -2027,7 +1836,7 @@ TE_df$time_PI <-
 # )
 ```
 
-# === TEA | TE CALC | IMPORT (*) =============================================
+# === TE | TE CALC | IMPORT (*) ==============================================
 ```{r}
 TE_splitgp17_HFTV1_df <-
   read_csv(
@@ -2038,7 +1847,7 @@ TE_splitgp17_HFTV1_df <-
     show_col_types = FALSE)
 ```
 
-# === TEA | VIS ==============================================================
+# === TE | VIS ===============================================================
 ```{r}
 
 test_plot <-
@@ -2148,7 +1957,7 @@ ggsave(
   dpi = 300)
 ```
 
-# === TEA | VIS | LOG ========================================================
+# === TE | VIS | LOG =========================================================
 ```{r}
 
 test_plot <-
