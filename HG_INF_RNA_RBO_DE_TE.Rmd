@@ -411,6 +411,14 @@ RNA_fc_fn <- function(rep, sample) {
   
 }
 
+# BR1
+BR1_RNA_000_E_fc_df <- RNA_fc_fn("BR1", "BR1_RNA_000_E")
+BR1_RNA_005_E_fc_df <- RNA_fc_fn("BR1", "BR1_RNA_005_E")
+BR1_RNA_015_E_fc_df <- RNA_fc_fn("BR1", "BR1_RNA_015_E")
+BR1_RNA_030_E_fc_df <- RNA_fc_fn("BR1", "BR1_RNA_030_E")
+BR1_RNA_060_E_fc_df <- RNA_fc_fn("BR1", "BR1_RNA_060_E")
+BR1_RNA_180_E_fc_df <- RNA_fc_fn("BR1", "BR1_RNA_180_E")
+
 # BR2
 BR2_RNA_000_E_fc_df <- RNA_fc_fn("BR2", "BR2_RNA_000_E")
 BR2_RNA_005_E_fc_df <- RNA_fc_fn("BR2", "BR2_RNA_005_E")
@@ -427,18 +435,17 @@ BR3_RNA_030_E_fc_df <- RNA_fc_fn("BR3", "BR3_RNA_030_E")
 BR3_RNA_060_E_fc_df <- RNA_fc_fn("BR3", "BR3_RNA_060_E")
 BR3_RNA_180_E_fc_df <- RNA_fc_fn("BR3", "BR3_RNA_180_E")
 
-# BR4
-BR4_RNA_000_E_fc_df <- RNA_fc_fn("BR4", "BR4_RNA_000_E")
-BR4_RNA_005_E_fc_df <- RNA_fc_fn("BR4", "BR4_RNA_005_E")
-BR4_RNA_015_E_fc_df <- RNA_fc_fn("BR4", "BR4_RNA_015_E")
-BR4_RNA_030_E_fc_df <- RNA_fc_fn("BR4", "BR4_RNA_030_E")
-BR4_RNA_060_E_fc_df <- RNA_fc_fn("BR4", "BR4_RNA_060_E")
-BR4_RNA_180_E_fc_df <- RNA_fc_fn("BR4", "BR4_RNA_180_E")
-
 # Extract read counts, combine, and reformat
 RNA_fc_df <- 
+  # BR1
+  BR1_RNA_000_E_fc_df %>%
+  full_join(BR1_RNA_005_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RNA_015_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RNA_030_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RNA_060_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RNA_180_E_fc_df, by = "gene_id") %>%
   # BR2
-  BR2_RNA_000_E_fc_df %>%
+  full_join(BR2_RNA_000_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RNA_005_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RNA_015_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RNA_030_E_fc_df, by = "gene_id") %>%
@@ -451,13 +458,6 @@ RNA_fc_df <-
   full_join(BR3_RNA_030_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RNA_060_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RNA_180_E_fc_df, by = "gene_id") %>%
-  # BR4
-  full_join(BR4_RNA_000_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RNA_005_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RNA_015_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RNA_030_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RNA_060_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RNA_180_E_fc_df, by = "gene_id") %>%
   column_to_rownames("gene_id")
 
 # Subset featurecounts data to non-p3 genes
@@ -470,7 +470,7 @@ RNA_fc_p3_df <-
   RNA_fc_df %>%
   filter(rownames(RNA_fc_df) %in% Hg_annot_p3_CDS_df$gene_id) %>%
   # Remove biological replicate that was missing p3.
-  select(!contains("BR2"))
+  select(!contains("BR1"))
 
 
 # Create non-p3 metadata
@@ -489,10 +489,10 @@ RNA_Np3_meta_df <-
     
     # Biological replicate
     biorep = 
-      factor(c("BR2", "BR2", "BR2", "BR2", "BR2", "BR2", 
-               "BR3", "BR3", "BR3", "BR3", "BR3", "BR3",
-               "BR4", "BR4", "BR4", "BR4", "BR4", "BR4"),
-             levels = c("BR2", "BR3", "BR4")),
+      factor(c("BR1", "BR1", "BR1", "BR1", "BR1", "BR1", 
+               "BR2", "BR2", "BR2", "BR2", "BR2", "BR2",
+               "BR3", "BR3", "BR3", "BR3", "BR3", "BR3"),
+             levels = c("BR1", "BR2", "BR3")),
     
     # Batch (effectively the same as biorep)
     batch = 
@@ -527,9 +527,9 @@ RNA_p3_meta_df <-
     
     # Biological replicate
     biorep = 
-      factor(c("BR3", "BR3", "BR3", "BR3", "BR3", "BR3",
-               "BR4", "BR4", "BR4", "BR4", "BR4", "BR4"),
-             levels = c("BR2", "BR3", "BR4")),
+      factor(c("BR2", "BR2", "BR2", "BR2", "BR2", "BR2",
+               "BR3", "BR3", "BR3", "BR3", "BR3", "BR3"),
+             levels = c("BR1", "BR2", "BR3")),
     
     # Batch (effectively the same as biorep)
     batch = 
@@ -578,11 +578,18 @@ RBO_fc_fn <- function(rep, sample) {
   
 }
 
+# BR1
+BR1_RBO_000_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_000_E_R1")
+BR1_RBO_005_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_005_E_R1")
+BR1_RBO_015_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_015_E_R1")
+BR1_RBO_060_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_060_E_R1")
+BR1_RBO_180_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_180_E_R1")
+
 # BR2
 BR2_RBO_000_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_000_E_R1")
 BR2_RBO_005_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_005_E_R1")
 BR2_RBO_015_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_015_E_R1")
-BR2_RBO_060_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_060_E_R1")
+BR2_RBO_030_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_030_E_R1")
 BR2_RBO_180_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_180_E_R1")
 
 # BR3
@@ -590,37 +597,30 @@ BR3_RBO_000_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_000_E_R1")
 BR3_RBO_005_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_005_E_R1")
 BR3_RBO_015_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_015_E_R1")
 BR3_RBO_030_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_030_E_R1")
+BR3_RBO_060_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_060_E_R1")
 BR3_RBO_180_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_180_E_R1")
-
-# BR4
-BR4_RBO_000_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_000_E_R1")
-BR4_RBO_005_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_005_E_R1")
-BR4_RBO_015_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_015_E_R1")
-BR4_RBO_030_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_030_E_R1")
-BR4_RBO_060_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_060_E_R1")
-BR4_RBO_180_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_180_E_R1")
 
 # Extract read counts, combine, and reformat
 RBO_fc_df <-
+  # BR1
+  BR1_RBO_000_E_fc_df %>%
+  full_join(BR1_RBO_005_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RBO_015_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RBO_060_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RBO_180_E_fc_df, by = "gene_id") %>%
   # BR2
-  BR2_RBO_000_E_fc_df %>%
+  full_join(BR2_RBO_000_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RBO_005_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RBO_015_E_fc_df, by = "gene_id") %>%
-  full_join(BR2_RBO_060_E_fc_df, by = "gene_id") %>%
+  full_join(BR2_RBO_030_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RBO_180_E_fc_df, by = "gene_id") %>%
   # BR3
   full_join(BR3_RBO_000_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RBO_005_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RBO_015_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RBO_030_E_fc_df, by = "gene_id") %>%
+  full_join(BR3_RBO_060_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RBO_180_E_fc_df, by = "gene_id") %>%
-  # BR4
-  full_join(BR4_RBO_000_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_005_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_015_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_030_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_060_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_180_E_fc_df, by = "gene_id") %>%
 
   column_to_rownames("gene_id")
 
@@ -634,7 +634,7 @@ RBO_fc_p3_df <-
   RBO_fc_df %>%
   filter(rownames(RBO_fc_df) %in% Hg_annot_p3_CDS_df$gene_id) %>%
   # Remove biological replicate that was missing p3.
-  select(!contains("BR2")) %>%
+  select(!contains("BR1")) %>%
   # Remove time points that have only one biological replicate at this point.
   select(!contains("060"))
 
@@ -645,11 +645,11 @@ RBO_Np3_meta_df <-
     # Time
     time = 
       factor(c(
-        # BR2
+        # BR1
         "000_PI", "005_PI", "015_PI", "060_PI", "180_PI",
-        # BR3
+        # BR2
         "000_PI", "005_PI", "015_PI", "030_PI", "180_PI",
-        # BR4
+        # BR3
         "000_PI", "005_PI", "015_PI", "030_PI", "060_PI", "180_PI"),
         
         # Define time points as distinct levels of time factor
@@ -659,10 +659,10 @@ RBO_Np3_meta_df <-
     
     # Biological replicate
     biorep = 
-      factor(c("BR2", "BR2", "BR2", "BR2", "BR2", 
-               "BR3", "BR3", "BR3", "BR3", "BR3",
-               "BR4", "BR4", "BR4", "BR4", "BR4", "BR4"),
-             levels = c("BR2", "BR3", "BR4")),
+      factor(c("BR1", "BR1", "BR1", "BR1", "BR1", 
+               "BR2", "BR2", "BR2", "BR2", "BR2",
+               "BR3", "BR3", "BR3", "BR3", "BR3", "BR3"),
+             levels = c("BR1", "BR2", "BR3")),
     
     # Batch (effectively the same as biological replicate)
     batch = 
@@ -687,9 +687,9 @@ RBO_p3_meta_df <-
     # Time
     time = 
       factor(c(
-        # BR3
+        # BR2
         "000_PI", "005_PI", "015_PI", "030_PI", "180_PI", 
-        # BR4
+        # BR3
         "000_PI", "005_PI", "015_PI", "030_PI", "180_PI"),
         
         # Define time points as distinct levels of time factor
@@ -698,9 +698,9 @@ RBO_p3_meta_df <-
     
     # Biological replicate
     biorep = 
-      factor(c("BR3", "BR3", "BR3", "BR3", "BR3",
-               "BR4", "BR4", "BR4", "BR4", "BR4"),
-             levels = c("BR2", "BR3", "BR4")),
+      factor(c("BR2", "BR2", "BR2", "BR2", "BR2",
+               "BR3", "BR3", "BR3", "BR3", "BR3"),
+             levels = c("BR1", "BR2", "BR3")),
     
     # Batch (effectively the same as biological replicate)
     batch = 
@@ -896,22 +896,22 @@ transf_summary_fn <-
     # missing across all RBO replicates).
     col_names <- c("gene_id", 0, 5, 15, 30, 60, 180)
     if (sample_type == "RNA") {
+      BR1_col_names <- col_names
       BR2_col_names <- col_names
       BR3_col_names <- col_names
-      BR4_col_names <- col_names
     } else if (sample_type == "RBO") {
       # Account for missing data for pHGLR3
       if (genetic_elements == "p3") {
         # Redefine column names to rename subset columns for graphing later
         # (no 60 min sample in RBO data; there was only one replicate after
-        # BR2 was removed, so I took it out entirely).
+        # BR1 was removed, so I took it out entirely).
         RBO_p3_col_names <- c("gene_id", 0, 5, 15, 30, 180)
+        BR2_col_names <- RBO_p3_col_names
         BR3_col_names <- RBO_p3_col_names
-        BR4_col_names <- RBO_p3_col_names
       } else if (genetic_elements == "Np3") {
-        BR2_col_names <- c("gene_id", 0, 5, 15, 60, 180)
-        BR3_col_names <- c("gene_id", 0, 5, 15, 30, 180)
-        BR4_col_names <- c("gene_id", 0, 5, 15, 30, 60, 180)
+        BR1_col_names <- c("gene_id", 0, 5, 15, 60, 180)
+        BR2_col_names <- c("gene_id", 0, 5, 15, 30, 180)
+        BR3_col_names <- c("gene_id", 0, 5, 15, 30, 60, 180)
       }
     }
     
@@ -920,19 +920,19 @@ transf_summary_fn <-
 
     # These or mean values can be used for DP-GP-Cluster.
 
-    BR2_transf_df <- transf_df %>% select(contains("BR2")) %>%
+    BR1_transf_df <- transf_df %>% select(contains("BR1")) %>%
       rownames_to_column("gene_id")
-    # Only try to rename BR2 column names for non-p3 genetic elements. BR2
+    # Only try to rename BR1 column names for non-p3 genetic elements. BR1
     # data for p3 do not exist.
     if (genetic_elements == "Np3") {
-      colnames(BR2_transf_df) <- BR2_col_names
+      colnames(BR1_transf_df) <- BR1_col_names
     }
+    BR2_transf_df <- transf_df %>% select(contains("BR2")) %>%
+      rownames_to_column("gene_id")
+    colnames(BR2_transf_df) <- BR2_col_names
     BR3_transf_df <- transf_df %>% select(contains("BR3")) %>%
       rownames_to_column("gene_id")
     colnames(BR3_transf_df) <- BR3_col_names
-    BR4_transf_df <- transf_df %>% select(contains("BR4")) %>%
-      rownames_to_column("gene_id")
-    colnames(BR4_transf_df) <- BR4_col_names
 
 
     # === CALCULATE SUMMARY STATISTICS ===
@@ -1055,6 +1055,11 @@ transf_summary_fn <-
 
     # Individual biological replicates
     write_csv(
+      BR1_transf_df,
+      paste("../c_ANA/c_DE_ANALYSIS/a_ISO/c_SFN/a_DATA/",
+            sample_type, "_BR1_", genetic_elements, "_",
+            transf_type, ".csv", sep = ""))
+    write_csv(
       BR2_transf_df,
       paste("../c_ANA/c_DE_ANALYSIS/a_ISO/c_SFN/a_DATA/",
             sample_type, "_BR2_", genetic_elements, "_",
@@ -1063,11 +1068,6 @@ transf_summary_fn <-
       BR3_transf_df,
       paste("../c_ANA/c_DE_ANALYSIS/a_ISO/c_SFN/a_DATA/",
             sample_type, "_BR3_", genetic_elements, "_",
-            transf_type, ".csv", sep = ""))
-    write_csv(
-      BR4_transf_df,
-      paste("../c_ANA/c_DE_ANALYSIS/a_ISO/c_SFN/a_DATA/",
-            sample_type, "_BR4_", genetic_elements, "_",
             transf_type, ".csv", sep = ""))
 
     # Summary statistics
@@ -1399,22 +1399,22 @@ transf_summary_fn <-
     # missing across all RBO replicates).
     col_names <- c("gene_id", 0, 5, 15, 30, 60, 180)
     if (sample_type == "RNA") {
+      BR1_col_names <- col_names
       BR2_col_names <- col_names
       BR3_col_names <- col_names
-      BR4_col_names <- col_names
     } else if (sample_type == "RBO") {
       # Account for missing data for pHGLR3
       if (genetic_elements == "p3") {
         # Redefine column names to rename subset columns for graphing later
         # (no 60 min sample in RBO data; there was only one replicate after
-        # BR2 was removed, so I took it out entirely).
+        # BR1 was removed, so I took it out entirely).
         RBO_p3_col_names <- c("gene_id", 0, 5, 15, 30, 180)
+        BR2_col_names <- RBO_p3_col_names
         BR3_col_names <- RBO_p3_col_names
-        BR4_col_names <- RBO_p3_col_names
       } else if (genetic_elements == "Np3") {
-        BR2_col_names <- c("gene_id", 0, 5, 15, 60, 180)
-        BR3_col_names <- c("gene_id", 0, 5, 15, 30, 180)
-        BR4_col_names <- c("gene_id", 0, 5, 15, 30, 60, 180)
+        BR1_col_names <- c("gene_id", 0, 5, 15, 60, 180)
+        BR2_col_names <- c("gene_id", 0, 5, 15, 30, 180)
+        BR3_col_names <- c("gene_id", 0, 5, 15, 30, 60, 180)
       }
     }
     
@@ -1423,19 +1423,19 @@ transf_summary_fn <-
 
     # These or mean values can be used for DP-GP-Cluster.
 
-    BR2_transf_df <- transf_df %>% select(contains("BR2")) %>%
+    BR1_transf_df <- transf_df %>% select(contains("BR1")) %>%
       rownames_to_column("gene_id")
-    # Only try to rename BR2 column names for non-p3 genetic elements. BR2
+    # Only try to rename BR1 column names for non-p3 genetic elements. BR1
     # data for p3 do not exist.
     if (genetic_elements == "Np3") {
-      colnames(BR2_transf_df) <- BR2_col_names
+      colnames(BR1_transf_df) <- BR1_col_names
     }
+    BR2_transf_df <- transf_df %>% select(contains("BR2")) %>%
+      rownames_to_column("gene_id")
+    colnames(BR2_transf_df) <- BR2_col_names
     BR3_transf_df <- transf_df %>% select(contains("BR3")) %>%
       rownames_to_column("gene_id")
     colnames(BR3_transf_df) <- BR3_col_names
-    BR4_transf_df <- transf_df %>% select(contains("BR4")) %>%
-      rownames_to_column("gene_id")
-    colnames(BR4_transf_df) <- BR4_col_names
 
 
     # === CALCULATE SUMMARY STATISTICS ===
@@ -1558,6 +1558,11 @@ transf_summary_fn <-
 
     # Individual biological replicates
     write_csv(
+      BR1_transf_df,
+      paste("../c_ANA/c_DE_ANALYSIS/a_ISO/d_RLD/a_DATA/",
+            sample_type, "_BR1_", genetic_elements, "_",
+            transf_type, ".csv", sep = ""))
+    write_csv(
       BR2_transf_df,
       paste("../c_ANA/c_DE_ANALYSIS/a_ISO/d_RLD/a_DATA/",
             sample_type, "_BR2_", genetic_elements, "_",
@@ -1566,11 +1571,6 @@ transf_summary_fn <-
       BR3_transf_df,
       paste("../c_ANA/c_DE_ANALYSIS/a_ISO/d_RLD/a_DATA/",
             sample_type, "_BR3_", genetic_elements, "_",
-            transf_type, ".csv", sep = ""))
-    write_csv(
-      BR4_transf_df,
-      paste("../c_ANA/c_DE_ANALYSIS/a_ISO/d_RLD/a_DATA/",
-            sample_type, "_BR4_", genetic_elements, "_",
             transf_type, ".csv", sep = ""))
 
     # Summary statistics
@@ -2270,9 +2270,9 @@ RNA_Np3_rld_pca_data <-
   RNA_Np3_rld_pca_data %>%
   mutate(
     br_condition = case_when(
+      grepl("E", name) & grepl("BR1", name) ~ "BR1_E",
       grepl("E", name) & grepl("BR2", name) ~ "BR2_E",
-      grepl("E", name) & grepl("BR3", name) ~ "BR3_E",
-      grepl("E", name) & grepl("BR4", name) ~ "BR4_E"))
+      grepl("E", name) & grepl("BR3", name) ~ "BR3_E"))
 
 RNA_Np3_rld_pca_percentVar <- 
   round(100 * attr(RNA_Np3_rld_pca_data, "percentVar"))
@@ -2287,12 +2287,12 @@ RNA_Np3_rld_pca_plot <-
     size = 4, stroke = 1, color = "black") +
   
   scale_shape_manual(
-    values = c("BR2_E" = 23,
-               "BR3_E" = 21,
-               "BR4_E" = 22),
-    labels = c("BR2_E" = "BR2 +HFTV1",
-               "BR3_E" = "BR3 +HFTV1",
-               "BR4_E" = "BR4 +HFTV1"),
+    values = c("BR1_E" = 23,
+               "BR2_E" = 21,
+               "BR3_E" = 22),
+    labels = c("BR1_E" = "BR1 +HFTV1",
+               "BR2_E" = "BR2 +HFTV1",
+               "BR3_E" = "BR3 +HFTV1"),
     name = "rep_condition") +
   
   scale_fill_manual(
@@ -2374,9 +2374,9 @@ RBO_Np3_rld_pca_data <-
   RBO_Np3_rld_pca_data %>%
   mutate(
     br_condition = case_when(
+      grepl("E", name) & grepl("BR1", name) ~ "BR1_E",
       grepl("E", name) & grepl("BR2", name) ~ "BR2_E",
       grepl("E", name) & grepl("BR3", name) ~ "BR3_E",
-      grepl("E", name) & grepl("BR4", name) ~ "BR4_E",
       grepl("E", name) & grepl("BR5", name) ~ "BR5_E",
       grepl("E", name) & grepl("BR6", name) ~ "BR6_E"))
 
@@ -2396,14 +2396,14 @@ RBO_Np3_rld_pca_plot <-
     size = 4, stroke = 1, color = "black") +
   
   scale_shape_manual(
-    values = c("BR2_E" = 23,
-               "BR3_E" = 21,
-               "BR4_E" = 22,
+    values = c("BR1_E" = 23,
+               "BR2_E" = 21,
+               "BR3_E" = 22,
                "BR5_E" = 24,
                "BR6_E" = 25),
-    labels = c("BR2_E" = "BR2 +HFTV1",
+    labels = c("BR1_E" = "BR1 +HFTV1",
+               "BR2_E" = "BR2 +HFTV1",
                "BR3_E" = "BR3 +HFTV1",
-               "BR4_E" = "BR4 +HFTV1",
                "BR5_E" = "BR5 +HFTV1",
                "BR6_E" = "BR6 +HFTV1"),
     name = "rep_condition") +
@@ -2488,8 +2488,8 @@ RNA_p3_rld_pca_data <-
   RNA_p3_rld_pca_data %>%
   mutate(
     br_condition = case_when(
-      grepl("E", name) & grepl("BR3", name) ~ "BR3_E",
-      grepl("E", name) & grepl("BR4", name) ~ "BR4_E"))
+      grepl("E", name) & grepl("BR2", name) ~ "BR2_E",
+      grepl("E", name) & grepl("BR3", name) ~ "BR3_E"))
 
 RNA_p3_rld_pca_percentVar <- 
   round(100 * attr(RNA_p3_rld_pca_data, "percentVar"))
@@ -2506,10 +2506,10 @@ RNA_p3_rld_pca_plot <-
     size = 3, stroke = 1, color = "black") +
   
   scale_shape_manual(
-    values = c("BR3_E" = 21,
-               "BR4_E" = 22),
-    labels = c("BR3_E" = "BR3 +HFTV1",
-               "BR4_E" = "BR4 +HFTV1"),
+    values = c("BR2_E" = 21,
+               "BR3_E" = 22),
+    labels = c("BR2_E" = "BR2 +HFTV1",
+               "BR3_E" = "BR3 +HFTV1"),
     name = "rep_condition") +
   
   scale_fill_manual(
@@ -2585,8 +2585,8 @@ RBO_p3_rld_pca_data <-
   RBO_p3_rld_pca_data %>%
   mutate(
     br_condition = case_when(
+      grepl("E", name) & grepl("BR2", name) ~ "BR2_E",
       grepl("E", name) & grepl("BR3", name) ~ "BR3_E",
-      grepl("E", name) & grepl("BR4", name) ~ "BR4_E",
       grepl("E", name) & grepl("BR5", name) ~ "BR5_E",
       grepl("E", name) & grepl("BR6", name) ~ "BR6_E"))
 
@@ -2606,12 +2606,12 @@ RBO_p3_rld_pca_plot <-
     size = 3, stroke = 1, color = "black") +
   
   scale_shape_manual(
-    values = c("BR3_E" = 21,
-               "BR4_E" = 22,
+    values = c("BR2_E" = 21,
+               "BR3_E" = 22,
                "BR5_E" = 24,
                "BR6_E" = 25),
-    labels = c("BR3_E" = "BR3 +HFTV1",
-               "BR4_E" = "BR4 +HFTV1",
+    labels = c("BR2_E" = "BR2 +HFTV1",
+               "BR3_E" = "BR3 +HFTV1",
                "BR5_E" = "BR5 +HFTV1",
                "BR6_E" = "BR6 +HFTV1"),
     name = "rep_condition") +
@@ -10193,11 +10193,18 @@ RBO_fc_fn <- function(rep, sample) {
 }
 
 
+# BR1
+BR1_RBO_000_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_000_E_R1")
+BR1_RBO_005_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_005_E_R1")
+BR1_RBO_015_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_015_E_R1")
+BR1_RBO_060_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_060_E_R1")
+BR1_RBO_180_E_fc_df <- RBO_fc_fn("BR1", "BR1_RBO_180_E_R1")
+
 # BR2
 BR2_RBO_000_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_000_E_R1")
 BR2_RBO_005_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_005_E_R1")
 BR2_RBO_015_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_015_E_R1")
-BR2_RBO_060_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_060_E_R1")
+BR2_RBO_030_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_030_E_R1")
 BR2_RBO_180_E_fc_df <- RBO_fc_fn("BR2", "BR2_RBO_180_E_R1")
 
 # BR3
@@ -10205,15 +10212,8 @@ BR3_RBO_000_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_000_E_R1")
 BR3_RBO_005_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_005_E_R1")
 BR3_RBO_015_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_015_E_R1")
 BR3_RBO_030_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_030_E_R1")
+BR3_RBO_060_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_060_E_R1")
 BR3_RBO_180_E_fc_df <- RBO_fc_fn("BR3", "BR3_RBO_180_E_R1")
-
-# BR4
-BR4_RBO_000_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_000_E_R1")
-BR4_RBO_005_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_005_E_R1")
-BR4_RBO_015_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_015_E_R1")
-BR4_RBO_030_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_030_E_R1")
-BR4_RBO_060_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_060_E_R1")
-BR4_RBO_180_E_fc_df <- RBO_fc_fn("BR4", "BR4_RBO_180_E_R1")
 
 # BR 5 and 6
 BR5_RBO_200_E_fc_df <- 
@@ -10345,25 +10345,25 @@ BR7_RBO_150_E_R1_minHHT_fc_df <-
 
 # Extract read counts, combine, and reformat
 RBO_fc_df <-
+  # BR1
+  BR1_RBO_000_E_fc_df %>%
+  full_join(BR1_RBO_005_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RBO_015_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RBO_060_E_fc_df, by = "gene_id") %>%
+  full_join(BR1_RBO_180_E_fc_df, by = "gene_id") %>%
   # BR2
-  BR2_RBO_000_E_fc_df %>%
+  full_join(BR2_RBO_000_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RBO_005_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RBO_015_E_fc_df, by = "gene_id") %>%
-  full_join(BR2_RBO_060_E_fc_df, by = "gene_id") %>%
+  full_join(BR2_RBO_030_E_fc_df, by = "gene_id") %>%
   full_join(BR2_RBO_180_E_fc_df, by = "gene_id") %>%
   # BR3
   full_join(BR3_RBO_000_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RBO_005_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RBO_015_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RBO_030_E_fc_df, by = "gene_id") %>%
+  full_join(BR3_RBO_060_E_fc_df, by = "gene_id") %>%
   full_join(BR3_RBO_180_E_fc_df, by = "gene_id") %>%
-  # BR4
-  full_join(BR4_RBO_000_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_005_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_015_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_030_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_060_E_fc_df, by = "gene_id") %>%
-  full_join(BR4_RBO_180_E_fc_df, by = "gene_id") %>%
   # BR5
   full_join(BR5_RBO_200_E_fc_df, by = "gene_id") %>%
   # BR6
@@ -10389,11 +10389,11 @@ RBO_Np3_meta_df <-
     # Time
     time = 
       factor(c(
-        # BR2
+        # BR1
         "000_PI", "005_PI", "015_PI", "060_PI", "180_PI",
-        # BR3
+        # BR2
         "000_PI", "005_PI", "015_PI", "030_PI", "180_PI",
-        # BR4
+        # BR3
         "000_PI", "005_PI", "015_PI", "030_PI", "060_PI", "180_PI",
         # BR5
         "200_PI",
@@ -10409,13 +10409,13 @@ RBO_Np3_meta_df <-
     
     # Biological replicate
     biorep = 
-      factor(c("BR2", "BR2", "BR2", "BR2", "BR2", 
-               "BR3", "BR3", "BR3", "BR3", "BR3",
-               "BR4", "BR4", "BR4", "BR4", "BR4", "BR4",
+      factor(c("BR1", "BR1", "BR1", "BR1", "BR1", 
+               "BR2", "BR2", "BR2", "BR2", "BR2",
+               "BR3", "BR3", "BR3", "BR3", "BR3", "BR3",
                "BR5",
                "BR6",
                "BR5", "BR6", "BR7"),
-             levels = c("BR2", "BR3", "BR4", "BR5", "BR6", "BR7")),
+             levels = c("BR1", "BR2", "BR3", "BR5", "BR6", "BR7")),
     
     # Batch (effectively the same as biological replicate)
     batch = 
@@ -10438,11 +10438,11 @@ RBO_Np3_meta_df <-
     drug = 
       factor(
         c(
+          # BR1 TC
+          "none", "none", "none", "none", "none",
           # BR2 TC
           "none", "none", "none", "none", "none",
           # BR3 TC
-          "none", "none", "none", "none", "none",
-          # BR4 TC
           "none", "none", "none", "none", "none", "none",
           # BR5 200
           "none",
