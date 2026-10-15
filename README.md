@@ -40,4 +40,6 @@ Note: other results files are available in the supplemental tables of the public
   - sfn_000 to sfn_180 - sizeFactor-normalized data of each gene at each time point. See DESeq2 documentation.
   - rld_000 to rld_180 - Rlog-transformed, sizeFactor-normalized data at each time point. See DESeq2 documentation.
   - L2FC_005_v_000 to L2FC_180_v_000 - L2FC data at each time point relative to 0 min post-infection.
-  - TE_000 to TE_180 - Translation efficiency of each gene at each time point. 
+  - TE_000 to TE_180 - Translation efficiency of each gene at each time point. TE calculation was performed as TE = (Ribo-seq SFN reads + 1)/(RNA-seq SFN reads + 1). Pseudocounts of 1 prevented division over 0. 
+ 
+- **TE_annot.csv** - Translation efficiency (TE) of each gene at each time point, accompanied by some of the same annotation information described above and *sizeFactor*-normalized (SFN) reads for RNA-seq and Ribo-seq. This file differs from **RBO_master.csv** by the inclusion of the RNA-seq data used for TE calculation
