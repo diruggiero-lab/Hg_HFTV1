@@ -1,3 +1,5 @@
+Accompanying work is available on bioRxiv as "Ribosome profiling reveals translational dynamics between an archaeal virus and its host" (https://www.biorxiv.org/content/10.64898/2026.09.13.751334v1) and is currently in preparation for journal submission. 
+
 ## CODE AND SCRIPTS 
 
 - **HFTV1_REANNOTATION.Rmd** - Documentation for reannotating the HFTV1 genome. Includes consolidation of revisions based on Pharokka/Phold, Ribo-Seq data +/-HHT, and various annotation file exports for downstream analyses.
