@@ -45,3 +45,5 @@ Note: other results files are available in the supplemental tables of the public
   - TE_000 to TE_180 - Translation efficiency of each gene at each time point. TE calculation was performed as TE = (Ribo-seq SFN reads + 1)/(RNA-seq SFN reads + 1). Pseudocounts of 1 prevented division over 0. 
  
 - **TE_annot.csv** - Translation efficiency (TE) of each gene at each time point, accompanied by some of the same annotation information described above and *sizeFactor*-normalized (SFN) reads for RNA-seq and Ribo-seq. This file differs from **RBO_master.csv** by the inclusion of the RNA-seq data used for TE calculation
+
+- **MS_protein_abundances.csv** - Proteomic data collected by LC-MS/MS from HFTV1-infected *Hg* and purified HFTV1 virions. Samples 1-3: HFTV1-infected *Hg*, 30 min p.i. Samples 4-6: HFTV1-infected *Hg*, 180 min p.i. Samples 7-9: Purified HFTV1 virions. 
