@@ -1,6 +1,6 @@
 ##gff-version 3
 ##source-version rtracklayer 1.64.0
-##date 2026-05-26
+##date 2026-11-11
 NC_062739.1	RefSeq	gene	16	531	.	+	.	db_xref=GeneID:71931108;gbkey=Gene;gene_biotype=protein_coding;locus_tag=M1M17_gp01;old_locus_tag=HFTV1-gp01;Name=M1M17_gp01;Parent=gene-M1M17_gp01;ID=gene-M1M17_gp01
 NC_062739.1	RefSeq	CDS	16	531	.	+	0	gbkey=CDS;locus_tag=M1M17_gp01;product=terminase small subunit;protein_id=YP_010355883.1;transl_table=11;exon_number=1;Name=M1M17_gp01;Parent=gene-M1M17_gp01;ID=cds-M1M17_gp01
 NC_062739.1	RefSeq	gene	553	1887	.	+	.	db_xref=GeneID:71931041;gbkey=Gene;gene_biotype=protein_coding;locus_tag=M1M17_gp02;old_locus_tag=HFTV1-gp02;Name=M1M17_gp02;Parent=gene-M1M17_gp02;ID=gene-M1M17_gp02
@@ -89,9 +89,9 @@ NC_062739.1	RefSeq	CDS	18156	18308	.	+	0	gbkey=CDS;locus_tag=M1M17_gp37;product=
 NC_062739.1	RefSeq	gene	18350	18562	.	+	.	db_xref=GeneID:71931077;gbkey=Gene;gene_biotype=protein_coding;locus_tag=M1M17_gp38;old_locus_tag=HFTV1-gp38;Name=M1M17_gp38;Parent=gene-M1M17_gp38;ID=gene-M1M17_gp38
 NC_062739.1	RefSeq	CDS	18350	18562	.	+	0	gbkey=CDS;locus_tag=M1M17_gp38;product=hypothetical protein;protein_id=YP_010355920.1;transl_table=11;exon_number=1;Name=M1M17_gp38;Parent=gene-M1M17_gp38;ID=cds-M1M17_gp38
 NC_062739.1	RefSeq	gene	18559	19437	.	-	.	db_xref=GeneID:71931078;gbkey=Gene;gene_biotype=protein_coding;locus_tag=M1M17_gp39;old_locus_tag=HFTV1-gp39;Name=M1M17_gp39;Parent=gene-M1M17_gp39;ID=gene-M1M17_gp39
-NC_062739.1	RefSeq	CDS	18562	19440	.	-	0	gbkey=CDS;locus_tag=M1M17_gp39;product=HNH endonuclease;protein_id=YP_010355921.1;transl_table=11;exon_number=1;Name=M1M17_gp39;Parent=gene-M1M17_gp39;ID=cds-M1M17_gp39
+NC_062739.1	RefSeq	CDS	18559	19437	.	-	0	gbkey=CDS;locus_tag=M1M17_gp39;product=HNH endonuclease;protein_id=YP_010355921.1;transl_table=11;exon_number=1;Name=M1M17_gp39;Parent=gene-M1M17_gp39;ID=cds-M1M17_gp39
 NC_062739.1	Pharokka_Phold	gene	19400	19546	.	-	.	db_xref=GeneID:MFI_PP_MNCMNMYK_CDS_0044;gene_biotype=protein_coding;locus_tag=M1M17_gp39a;product=hypothetical protein;transl_table=11;Name=M1M17_gp39a;Parent=gene-M1M17_gp39a;ID=gene-M1M17_gp39a
-NC_062739.1	Pharokka_Phold	CDS	19400	19546	.	-	0	db_xref=GeneID:MFI_PP_MNCMNMYK_CDS_0044;locus_tag=M1M17_gp39a;product=hypothetical protein;transl_table=11;Name=M1M17_gp39a;Parent=gene-M1M17_gp39a;ID=cds-M1M17_gp39a
+NC_062739.1	Pharokka_Phold	CDS	19397	19543	.	-	0	db_xref=GeneID:MFI_PP_MNCMNMYK_CDS_0044;locus_tag=M1M17_gp39a;product=hypothetical protein;transl_table=11;Name=M1M17_gp39a;Parent=gene-M1M17_gp39a;ID=cds-M1M17_gp39a
 NC_062739.1	RefSeq	gene	19536	20561	.	+	.	db_xref=GeneID:71931079;gbkey=Gene;gene_biotype=protein_coding;locus_tag=M1M17_gp40;old_locus_tag=HFTV1-gp40;Name=M1M17_gp40;Parent=gene-M1M17_gp40;ID=gene-M1M17_gp40
 NC_062739.1	RefSeq	CDS	19536	20561	.	+	0	gbkey=CDS;locus_tag=M1M17_gp40;product=tape measure protein;protein_id=YP_010355922.1;transl_table=11;exon_number=1;note=C-terminal region;Name=M1M17_gp40;Parent=gene-M1M17_gp40;ID=cds-M1M17_gp40
 NC_062739.1	RefSeq	gene	20562	21419	.	+	.	db_xref=GeneID:71931080;gbkey=Gene;gene_biotype=protein_coding;locus_tag=M1M17_gp41;old_locus_tag=HFTV1-gp41;Name=M1M17_gp41;Parent=gene-M1M17_gp41;ID=gene-M1M17_gp41
@@ -103,7 +103,7 @@ NC_062739.1	RefSeq	CDS	22792	23022	.	+	0	gbkey=CDS;locus_tag=M1M17_gp43;product=
 NC_062739.1	RefSeq	gene	23025	25889	.	+	.	db_xref=GeneID:71931083;gbkey=Gene;gene_biotype=protein_coding;locus_tag=M1M17_gp44;old_locus_tag=HFTV1-gp44;Name=M1M17_gp44;Parent=gene-M1M17_gp44;ID=gene-M1M17_gp44
 NC_062739.1	RefSeq	CDS	23025	25889	.	+	0	gbkey=CDS;locus_tag=M1M17_gp44;product=baseplate hub;protein_id=YP_010355926.1;transl_table=11;exon_number=1;note=contains a carbohydrate-binding domain;Name=M1M17_gp44;Parent=gene-M1M17_gp44;ID=cds-M1M17_gp44
 NC_062739.1	RefSeq	gene	25886	26188	.	-	.	db_xref=GeneID:71931084;gbkey=Gene;gene_biotype=protein_coding;locus_tag=M1M17_gp45;old_locus_tag=HFTV1-gp45;Name=M1M17_gp45;Parent=gene-M1M17_gp45;ID=gene-M1M17_gp45
-NC_062739.1	RefSeq	CDS	25889	26191	.	-	0	gbkey=CDS;locus_tag=M1M17_gp45;product=mRNA-degrading endonuclease RelE;protein_id=YP_010355927.1;transl_table=11;exon_number=1;Name=M1M17_gp45;Parent=gene-M1M17_gp45;ID=cds-M1M17_gp45
+NC_062739.1	RefSeq	CDS	25886	26188	.	-	0	gbkey=CDS;locus_tag=M1M17_gp45;product=mRNA-degrading endonuclease RelE;protein_id=YP_010355927.1;transl_table=11;exon_number=1;Name=M1M17_gp45;Parent=gene-M1M17_gp45;ID=cds-M1M17_gp45
 NC_062739.1	Pharokka_Phold	gene	25971	26180	.	+	.	db_xref=GeneID:MFI_PP_MNCMNMYK_CDS_0050;gene_biotype=protein_coding;locus_tag=M1M17_gp46c;product=hypothetical protein;transl_table=11;Name=M1M17_gp46c;Parent=gene-M1M17_gp46c;ID=gene-M1M17_gp46c
 NC_062739.1	Pharokka_Phold	CDS	25971	26180	.	+	0	db_xref=GeneID:MFI_PP_MNCMNMYK_CDS_0050;locus_tag=M1M17_gp46c;product=hypothetical protein;transl_table=11;Name=M1M17_gp46c;Parent=gene-M1M17_gp46c;ID=cds-M1M17_gp46c
 NC_062739.1	Pharokka_Phold	gene	26306	26539	.	+	.	db_xref=GeneID:MFI_PP_MNCMNMYK_CDS_0051;gene_biotype=protein_coding;locus_tag=M1M17_gp46a;product=hypothetical protein;transl_table=11;Name=M1M17_gp46a;Parent=gene-M1M17_gp46a;ID=gene-M1M17_gp46a
@@ -125,7 +125,7 @@ NC_062739.1	Pharokka_Phold	CDS	28371	28490	.	+	0	db_xref=GeneID:MFI_PP_MNCMNMYK_
 NC_062739.1	Pharokka_Phold	gene	28517	28687	.	+	.	db_xref=GeneID:MFI_PP_MNCMNMYK_CDS_0059;gene_biotype=protein_coding;locus_tag=M1M17_gp50c;product=hypothetical protein;transl_table=11;Name=M1M17_gp50c;Parent=gene-M1M17_gp50c;ID=gene-M1M17_gp50c
 NC_062739.1	Pharokka_Phold	CDS	28517	28687	.	+	0	db_xref=GeneID:MFI_PP_MNCMNMYK_CDS_0059;locus_tag=M1M17_gp50c;product=hypothetical protein;transl_table=11;Name=M1M17_gp50c;Parent=gene-M1M17_gp50c;ID=cds-M1M17_gp50c
 NC_062739.1	RefSeq	gene	28666	28998	.	-	.	db_xref=GeneID:71931090;gbkey=Gene;gene_biotype=protein_coding;locus_tag=M1M17_gp51;old_locus_tag=HFTV1-gp51;Name=M1M17_gp51;Parent=gene-M1M17_gp51;ID=gene-M1M17_gp51
-NC_062739.1	RefSeq	CDS	28669	29001	.	-	0	gbkey=CDS;locus_tag=M1M17_gp51;product=hypothetical protein;protein_id=YP_010355933.1;transl_table=11;exon_number=1;Name=M1M17_gp51;Parent=gene-M1M17_gp51;ID=cds-M1M17_gp51
+NC_062739.1	RefSeq	CDS	28666	28998	.	-	0	gbkey=CDS;locus_tag=M1M17_gp51;product=hypothetical protein;protein_id=YP_010355933.1;transl_table=11;exon_number=1;Name=M1M17_gp51;Parent=gene-M1M17_gp51;ID=cds-M1M17_gp51
 NC_062739.1	Pharokka_Phold	gene	28844	29251	.	+	.	db_xref=GeneID:MFI_PP_MNCMNMYK_CDS_0060;gene_biotype=protein_coding;locus_tag=M1M17_gp52a;product=hypothetical protein;transl_table=11;Name=M1M17_gp52a;Parent=gene-M1M17_gp52a;ID=gene-M1M17_gp52a
 NC_062739.1	Pharokka_Phold	CDS	28844	29251	.	+	0	db_xref=GeneID:MFI_PP_MNCMNMYK_CDS_0060;locus_tag=M1M17_gp52a;product=hypothetical protein;transl_table=11;Name=M1M17_gp52a;Parent=gene-M1M17_gp52a;ID=cds-M1M17_gp52a
 NC_062739.1	Pharokka_Phold	gene	29230	29340	.	+	.	db_xref=GeneID:MFI_PP_MNCMNMYK_CDS_0061;gene_biotype=protein_coding;locus_tag=M1M17_gp52b;product=hypothetical protein;transl_table=11;Name=M1M17_gp52b;Parent=gene-M1M17_gp52b;ID=gene-M1M17_gp52b

@@ -13,7 +13,7 @@ These files relate to analysis of transcription and translation during the infec
 
 ## ANNOTATIONS AND REFERENCE FILES
 
-- **HFTV1_NCBI_PP_consensus.gff** - HFTV1 annotation containing features derived from NCBI annotations and Pharokka/Phold (PP), as well as revised descriptions for structural genes based on Zhang et al. (2025) cryo-EM of HFTV1 virions.
+- **HFTV1_NCBI_PP_consensus.gff** - HFTV1 annotation containing features derived from NCBI annotations and Pharokka/Phold (PP), as well as revised descriptions for structural genes based on Zhang et al. (2025) cryo-EM of HFTV1 virions. CSV format included for convenient browsing outside of formal analysis. 
 
 - **HFTV1_Hg.gff** and **HFTV1_Hg_gff.csv** - Merged HFTV1-*Hg* annotations, with revisions of HFTV1 ORFs based on translation start site mapping using Ribo-seq +/- harringtonine. HFTV1 annotation with Pharokka/Phold features (see above) was used as input in the construction of this file. CSV format included for convenient browsing outside of formal analysis.
 
@@ -41,10 +41,10 @@ Note: other results files are available in the supplemental tables of the public
   - COG_category - Single-letter code for COG annotation categories. Derived from arCOG annotation via eggNOG and additional custom categories for HFTV1.
   - COG_ora_fdr_p_val - Significance value for over- or under-representation of a given COG category per cluster family. Corrected for FDR by BH adjustment. This value corresponds to the COG category assigned to each gene and is not unique to every gene.
   - baseMean - Mean read counts per gene. See DESeq2 documentation.
-  - padj_bh - Significance value for differential expression of a given gene. FDR-corrected by BH adjustment based on total number of tests conducted, accounting for genes on all genetic elements including pHGLR3.
+  - padj_bh - LRT-based significance value for differential expression of a given gene. The LRT was used to test whether the expression of each gene had a menaingful relationship with time, in contrast to the standard pairwise Wald test which compares any two conditions. FDR-corrected by BH adjustment based on total number of tests conducted, accounting for genes on all genetic elements including pHGLR3. For more information on the LRT, see DESeq2 documentation.
   - sfn_000 to sfn_180 - sizeFactor-normalized data of each gene at each time point. See DESeq2 documentation.
   - rld_000 to rld_180 - Rlog-transformed, sizeFactor-normalized data at each time point. See DESeq2 documentation.
-  - L2FC_005_v_000 to L2FC_180_v_000 - L2FC data at each time point relative to 0 min post-infection.
+  - L2FC_005_v_000 to L2FC_180_v_000 - L2FC data at each time point relative to 0 min post-infection. Note that these values were not accompanied by pairwise Wald hypothesis testing or significance values; instead, significance is based solely on the LRT. 
   - TE_000 to TE_180 - Translation efficiency of each gene at each time point. TE calculation was performed as TE = (Ribo-seq SFN reads + 1)/(RNA-seq SFN reads + 1). Pseudocounts of 1 prevented division over 0. 
  
 - **TE_annot.csv** - Translation efficiency (TE) of each gene at each time point, accompanied by some of the same annotation information described above and *sizeFactor*-normalized (SFN) reads for RNA-seq and Ribo-seq. This file differs from **RBO_master.csv** by the inclusion of the RNA-seq data used for TE calculation
