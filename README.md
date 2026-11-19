@@ -1,3 +1,6 @@
+Matthew Isada
+DiRuggiero Lab
+
 These files relate to analysis of transcription and translation during the infection cycle of the archaeal virus HFTV1 in its host, *Haloferax gibbonsii* (*Hg*). An accompanying manuscript is available on bioRxiv under the title "Ribosome profiling reveals translational dynamics between an archaeal virus and its host" (https://www.biorxiv.org/content/10.64898/2026.09.13.751334v1) and is in preparation for journal submission. 
 
 ## CODE AND SCRIPTS 
